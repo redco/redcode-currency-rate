@@ -32,4 +32,10 @@ interface ICurrencyRate
      * @return ICurrency
      */
     public function getCurrency();
+
+    /**
+     * Get rate provider name
+     * @return string
+     */
+    public function getProviderName();
 }
