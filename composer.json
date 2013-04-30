@@ -1,0 +1,21 @@
+{
+    "name": "redcode/currency-rate",
+    "autoload": { "psr-0": { "RedCode": "src/" } },
+    "description": "Base classes for currency rate load and convert",
+    "keywords": ["Currency", "Rate", "cbr.ru", "converter", "Symfony2"],
+    "homepage": "https://github.com/maZahaca/redcode-currency-rate",
+    "authors": [
+        {
+            "name": "Andrew Reddikh",
+            "email": "mazahaco@gmail.com",
+            "homepage": "https://github.com/maZahaca"
+        }
+    ],
+    "require": {
+        "php": ">=5.4.4",
+        "symfony/framework-bundle": ">=2.0,<2.3-dev"
+    },
+    "autoload": {
+        "psr-0": { "RedCode\\Currency": "src/" }
+    }
+}
