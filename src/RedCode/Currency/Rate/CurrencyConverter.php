@@ -48,23 +48,23 @@ class CurrencyConverter
         $date = new \DateTime();
         $date->setTime(0, 0, 0);
 
-        /** @var $fromRate  */
-        $fromRate = $this->rateManager->getRate($from, $provider, $date);
-        if(!$fromRate) {
-            throw new RateNotFoundException($from, $provider, $date);
+        if($from->getCode() != $provider->getBaseCurrency()->getCode()) {
+            /** @var $fromRate  */
+            $fromRate = $this->rateManager->getRate($from, $provider, $date);
+            $valueBase = $fromRate->getRate() / $fromRate->getNominal() * $value;
+        }
+        else {
+            $valueBase = $value;
         }
 
-        $valueBase = $fromRate->getRate() / $fromRate->getNominal() * $value;
-
-        if($to->getCode() == $provider->getBaseCurrency()->getCode()) {
-            return $valueBase;
+        if($to->getCode() != $provider->getBaseCurrency()->getCode()) {
+            $toRate = $this->rateManager->getRate($to, $provider, $date);
+            $toRate = $toRate->getNominal() / $toRate->getRate();
+        }
+        else {
+            $toRate = 1.0;
         }
 
-        $toRate = $this->rateManager->getRate($to, $provider, $date);
-        if(!$toRate) {
-            throw new RateNotFoundException($to, $provider, $date);
-        }
-
-        return $toRate->getNominal() / $toRate->getRate() * $valueBase;
+        return $toRate * $valueBase;
     }
 }

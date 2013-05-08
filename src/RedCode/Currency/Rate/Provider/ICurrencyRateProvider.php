@@ -15,10 +15,10 @@ interface ICurrencyRateProvider
      * Load rates by date
      *
      * @param ICurrency[] $currencies
-     * @param \DateTime $date
+     * @param \DateTime|null $date
      * @return ICurrencyRate[]
      */
-    public function getRates($currencies, \DateTime $date);
+    public function getRates($currencies, \DateTime $date = null);
 
     /**
      * Get base currency

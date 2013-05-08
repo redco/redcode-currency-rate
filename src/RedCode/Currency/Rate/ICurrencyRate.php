@@ -17,7 +17,7 @@ interface ICurrencyRate
 
     /**
      * Return currency nominal relative base currency
-     * @return float
+     * @return int
      */
     public function getNominal();
 

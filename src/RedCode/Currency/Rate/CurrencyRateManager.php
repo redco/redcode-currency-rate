@@ -2,6 +2,7 @@
 
 namespace RedCode\Currency\Rate;
 
+use Doctrine\ORM\EntityManager;
 use RedCode\Currency\ICurrency;
 use RedCode\Currency\Rate\Exception\RateNotFoundException;
 use RedCode\Currency\Rate\ICurrencyRateManager;
@@ -26,6 +27,9 @@ class CurrencyRateManager implements ICurrencyRateManager
     {
         $this->em = $em;
         $this->currencyRateClassName = $currencyRateClassName;
+        if(!$currencyRateClassName || (!$this->em->getMetadataFactory()->hasMetadataFor($currencyRateClassName) && !$this->em->getClassMetadata($currencyRateClassName))) {
+            throw new \Exception("Class for currency rate \"{$currencyRateClassName}\" not found");
+        }
     }
 
     private static $reflection;
@@ -41,12 +45,7 @@ class CurrencyRateManager implements ICurrencyRateManager
     }
 
     /**
-     * @param \RedCode\Currency\ICurrency $currency
-     * @param Provider\ICurrencyRateProvider $provider
-     * @param \DateTime $date
-     * @param float $rate
-     * @param float $nominal
-     * @return ICurrencyRate
+     * @inheritdoc
      */
     public function getNewInstance(ICurrency $currency, ICurrencyRateProvider $provider, \DateTime $date, $rate, $nominal)
     {
@@ -54,12 +53,7 @@ class CurrencyRateManager implements ICurrencyRateManager
     }
 
     /**
-     * @param \RedCode\Currency\ICurrency $currency
-     * @param Provider\ICurrencyRateProvider $provider
-     * @param \DateTime $rateDate
-     * @return ICurrencyRate
-     *
-     * @throws RateNotFoundException
+     * @inheritdoc
      */
     public function getRate(ICurrency $currency, ICurrencyRateProvider $provider, \DateTime $rateDate = null)
     {
@@ -80,10 +74,34 @@ class CurrencyRateManager implements ICurrencyRateManager
         }
         $result = $qb->getQuery()->getResult();
         $result = reset($result);
-        if(!isset($result)) {
+        if(!$result) {
             throw new RateNotFoundException($currency, $provider, $rateDate);
         }
         
         return $result;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function saveRates($rates)
+    {
+        if(is_array($rates)) {
+            foreach($rates as &$rate) {
+                $found = $this->em->getRepository($this->currencyRateClassName)->findBy(array (
+                    'date' => $rate->getDate(),
+                    'providerName' => $rate->getProviderName(),
+                    'currency' => $rate->getCurrency()->getId()
+                ));
+                if(count($found)) {
+                    $found = reset($found);
+                    $found->setRate($rate->getRate());
+                    $found->setNominal($rate->getNominal());
+                    $rate = $found;
+                }
+                $this->em->persist($rate);
+            }
+            $this->em->flush();
+        }
     }
 }

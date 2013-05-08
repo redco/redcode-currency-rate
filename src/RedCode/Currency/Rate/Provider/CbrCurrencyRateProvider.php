@@ -44,27 +44,26 @@ class CbrCurrencyRateProvider implements ICurrencyRateProvider
         }
 
         $client = new \SoapClient("http://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx?WSDL");
-        $date = $date->format('Y-m-d');
-        $curs = $client->GetCursOnDate(array("On_date" => $date));
+        $curs = $client->GetCursOnDate(array("On_date" => $date->format('Y-m-d')));
         $ratesXml = new \SimpleXMLElement($curs->GetCursOnDateResult->any);
 
         $result = array();
         foreach($currencies as $currency) {
-            foreach($ratesXml as $xmlItem) {
-                if($currency->getCode() == $xmlItem['code']) {
-                    $rate = $this->currencyRateManager->getNewInstance(
-                        $this->currencyManager->getCurrency($xmlItem['code']),
-                        $this,
-                        new \DateTime($xmlItem['date']),
-                        (float)$xmlItem['rate'],
-                        (float)$xmlItem['nom']
-                    );
+            $rateCbr = $ratesXml->xpath('ValuteData/ValuteCursOnDate/VchCode[.="'.$currency->getCode().'"]/parent::*');
+            if(!$rateCbr)
+                continue;
 
-                    $result[$currency->getCode()] = $rate;
-                    break;
-                }
-            }
+            $rate = $this->currencyRateManager->getNewInstance(
+                $this->currencyManager->getCurrency($currency->getCode()),
+                $this,
+                $date,
+                (float)$rateCbr[0]->Vcurs,
+                (float)$rateCbr[0]->Vnom
+            );
+
+            $result[$currency->getCode()] = $rate;
         }
+        return $result;
     }
 
     /**

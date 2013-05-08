@@ -30,4 +30,10 @@ interface ICurrencyRateManager
      * @throws RateNotFoundException
      */
     public function getRate(ICurrency $currency, ICurrencyRateProvider $provider, \DateTime $rateDate = null);
+
+    /**
+     * @param ICurrencyRate[] $rates
+     * @return mixed
+     */
+    public function saveRates($rates);
 }

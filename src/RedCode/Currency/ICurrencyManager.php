@@ -13,4 +13,10 @@ interface ICurrencyManager
      * @return ICurrency
      */
     public function getCurrency($code);
+
+    /**
+     * Get active currency
+     * @return ICurrency[]
+     */
+    public function getAll();
 }
