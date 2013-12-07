@@ -58,7 +58,7 @@ class CbrCurrencyRateProvider implements ICurrencyRateProvider
                 $this,
                 $date,
                 (float)$rateCbr[0]->Vcurs,
-                (float)$rateCbr[0]->Vnom
+                (int)$rateCbr[0]->Vnom
             );
 
             $result[$currency->getCode()] = $rate;
@@ -81,5 +81,13 @@ class CbrCurrencyRateProvider implements ICurrencyRateProvider
     public function getName()
     {
         return self::PROVIDER_NAME;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function isInversed()
+    {
+        return true;
     }
 }

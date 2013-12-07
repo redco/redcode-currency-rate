@@ -30,6 +30,8 @@ class RateNotFoundException extends \Exception
         $this->currency = $currency;
         $this->date     = $date;
         $this->provider = $provider;
+
+        $this->message = sprintf('Rate not found for currency %s and provider %s', $currency->getCode(), $provider->getName());
     }
 
     /**

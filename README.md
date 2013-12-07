@@ -1,4 +1,4 @@
 redcode-currency-rate
 =====================
 
-Lib for loading currency rates
+This are simple classes for currency rate load and currency convert.

@@ -35,4 +35,12 @@ class ProviderFactory
             return $this->providers[$name];
         }
     }
+
+    /**
+     * @return ICurrencyRateProvider[]
+     */
+    public function getAll()
+    {
+        return $this->providers;
+    }
 }

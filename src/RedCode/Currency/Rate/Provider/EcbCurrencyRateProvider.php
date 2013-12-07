@@ -91,4 +91,12 @@ class EcbCurrencyRateProvider implements ICurrencyRateProvider
     {
         return self::PROVIDER_NAME;
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function isInversed()
+    {
+        return false;
+    }
 }

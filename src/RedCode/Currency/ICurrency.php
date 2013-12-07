@@ -12,4 +12,10 @@ interface ICurrency
      * @return string
      */
     public function getCode();
+
+    /**
+     * Id of currency
+     * @return mixed
+     */
+    public function getId();
 }

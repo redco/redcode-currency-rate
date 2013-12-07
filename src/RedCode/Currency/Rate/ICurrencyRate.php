@@ -38,4 +38,39 @@ interface ICurrencyRate
      * @return string
      */
     public function getProviderName();
+
+    /**
+     * Set date of rate
+     * @param \DateTime $date
+     * @return self
+     */
+    public function setDate($date);
+
+    /**
+     * Set nominal value
+     * @param $nominal
+     * @return self
+     */
+    public function setNominal($nominal);
+
+    /**
+     * Set rate
+     * @param $rate
+     * @return self
+     */
+    public function setRate($rate);
+
+    /**
+     * Set currency
+     * @param ICurrency $currency
+     * @return self
+     */
+    public function setCurrency(ICurrency $currency);
+
+    /**
+     * Set provider name
+     * @param $provider
+     * @return self
+     */
+    public function setProviderName($provider);
 }
