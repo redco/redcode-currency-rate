@@ -1,0 +1,21 @@
+{
+    "name": "redcode/currency-rate",
+    "description": "Classes for currency rate load and convert",
+    "type": "library",
+    "keywords": ["currency", "rate", "converter", "loader", "cbr.ru", "www.ecb.europa.eu"],
+    "homepage": "https://github.com/maZahaca/redcode-currency-rate",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Andrew Reddikh",
+            "email": "andrew@reddikh.com",
+            "homepage": "http://reddikh.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.4.0"
+    },
+    "autoload": {
+        "psr-0": { "RedCode\\Currency": "src/" }
+    }
+}
