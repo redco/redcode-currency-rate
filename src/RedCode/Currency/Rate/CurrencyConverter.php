@@ -43,7 +43,7 @@ class CurrencyConverter
      * @param ICurrency|string $to ICurrency object or currency code
      * @param float $value Value to convert in currency $from
      * @param string|null $provider provider name
-     * @param \DateTime|null $rateDate Date for rate (default - today, false - any date)
+     * @param \DateTime|bool|null $rateDate Date for rate (default - today, false - any date)
      * @throws Exception\ProviderNotFoundException
      * @throws Exception\RateNotFoundException
      * @throws Exception\CurrencyNotFoundException
