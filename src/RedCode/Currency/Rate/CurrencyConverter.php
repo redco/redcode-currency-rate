@@ -126,7 +126,7 @@ class CurrencyConverter
         }
 
         if($foundValue === null) {
-            throw new RateNotFoundException($errorParams['currency'], $errorParams['provider'], $date);
+            throw new RateNotFoundException($errorParams['currency'], $errorParams['provider'], $rateDate);
         }
 
         return $foundValue;
