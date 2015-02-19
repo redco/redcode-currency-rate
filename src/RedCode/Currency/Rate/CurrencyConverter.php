@@ -62,8 +62,10 @@ class CurrencyConverter
             throw new ProviderNotFoundException($provider);
         }
 
-        $date = ($rateDate instanceof \DateTime) ? $rateDate : new \DateTime();
-        $date->setTime(0, 0, 0);
+        if($rateDate instanceof \DateTime)
+        {
+            $rateDate->setTime(0, 0, 0);
+        }
 
         $foundValue = null;
 
@@ -80,7 +82,7 @@ class CurrencyConverter
 
             if($from->getCode() != $provider->getBaseCurrency()->getCode()) {
                 /** @var ICurrencyRate $fromRate  */
-                $fromRate = $this->rateManager->getRate($from, $provider, $date);
+                $fromRate = $this->rateManager->getRate($from, $provider, $rateDate);
                 if(!$fromRate) {
                     $errorParams['currency'] = $from;
                     $errorParams['provider'] = $provider;
@@ -100,7 +102,7 @@ class CurrencyConverter
 
             if($to->getCode() != $provider->getBaseCurrency()->getCode()) {
                 /** @var ICurrencyRate $toRate  */
-                $toRate = $this->rateManager->getRate($to, $provider, $date);
+                $toRate = $this->rateManager->getRate($to, $provider, $rateDate);
                 if(!$toRate) {
                     $errorParams['currency'] = $to;
                     $errorParams['provider'] = $provider;
@@ -124,7 +126,7 @@ class CurrencyConverter
         }
 
         if($foundValue === null) {
-            throw new RateNotFoundException($errorParams['currency'], $errorParams['provider'], $date);
+            throw new RateNotFoundException($errorParams['currency'], $errorParams['provider'], $rateDate);
         }
 
         return $foundValue;
