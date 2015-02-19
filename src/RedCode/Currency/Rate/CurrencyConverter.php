@@ -64,7 +64,7 @@ class CurrencyConverter
 
         if($rateDate instanceof \DateTime)
         {
-            $$rateDate->setTime(0, 0, 0);
+            $rateDate->setTime(0, 0, 0);
         }
 
         $foundValue = null;
