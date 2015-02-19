@@ -82,7 +82,7 @@ class CurrencyConverter
 
             if($from->getCode() != $provider->getBaseCurrency()->getCode()) {
                 /** @var ICurrencyRate $fromRate  */
-                $fromRate = $this->rateManager->getRate($from, $provider, $date);
+                $fromRate = $this->rateManager->getRate($from, $provider, $rateDate);
                 if(!$fromRate) {
                     $errorParams['currency'] = $from;
                     $errorParams['provider'] = $provider;
