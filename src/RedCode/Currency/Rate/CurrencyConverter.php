@@ -4,6 +4,7 @@ namespace RedCode\Currency\Rate;
 
 use RedCode\Currency\ICurrency;
 use RedCode\Currency\ICurrencyManager;
+use RedCode\Currency\Rate\Exception\CurrencyNotFoundException;
 use RedCode\Currency\Rate\Exception\ProviderNotFoundException;
 use RedCode\Currency\Rate\Exception\RateNotFoundException;
 use RedCode\Currency\Rate\Provider\ICurrencyRateProvider;
@@ -42,18 +43,27 @@ class CurrencyConverter
      * @param ICurrency|string $to ICurrency object or currency code
      * @param float $value Value to convert in currency $from
      * @param string|null $provider provider name
-     * @param \DateTime|null $rateDate Date for rate (default - today)
+     * @param \DateTime|bool|null $rateDate Date for rate (default - today, false - any date)
      * @throws Exception\ProviderNotFoundException
      * @throws Exception\RateNotFoundException
+     * @throws Exception\CurrencyNotFoundException
      * @return float
      */
     public function convert($from, $to, $value, $provider = null, $rateDate = null)
     {
         if(!($from instanceof ICurrency)) {
+            $fromStr = $from;
             $from = $this->currencyManager->getCurrency($from);
+            if(!($from instanceof ICurrency)) {
+                throw new CurrencyNotFoundException($fromStr);
+            }
         }
         if(!($to instanceof ICurrency)) {
+            $toStr = $to;
             $to = $this->currencyManager->getCurrency($to);
+            if(!($to instanceof ICurrency)) {
+                throw new CurrencyNotFoundException($toStr);
+            }
         }
 
         $providers = $provider === null ? $this->providerFactory->getAll() : [$this->providerFactory->get($provider)];
@@ -62,8 +72,8 @@ class CurrencyConverter
             throw new ProviderNotFoundException($provider);
         }
 
-        $date = ($rateDate instanceof \DateTime) ? $rateDate : new \DateTime();
-        $date->setTime(0, 0, 0);
+        $date = $rateDate === false ? null : (($rateDate instanceof \DateTime) ? $rateDate : new \DateTime());
+        $date && $date->setTime(0, 0, 0);
 
         $foundValue = null;
 
