@@ -90,7 +90,7 @@ class CurrencyConverter
                 }
 
                 if (!$provider->isInversed()) {
-                    $valueBase = $value / ($fromRate->getRate() *  $fromRate->getNominal());
+                    $valueBase = $value / ($fromRate->getRate() * $fromRate->getNominal());
                 } else {
                     $valueBase = $fromRate->getRate() / $fromRate->getNominal() * $value;
                 }
