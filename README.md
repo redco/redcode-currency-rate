@@ -1,4 +1,4 @@
-# Currency converter library [![Latest Stable Version](https://img.shields.io/packagist/v/redco/redcode-currency-rate.svg?style=flat-square)](https://packagist.org/packages/redcode/currency-rate) [![Total Downloads](https://img.shields.io/packagist/dt/redcode/currency-rate.svg?style=flat-square)](https://packagist.org/packages/redcode/currency-rate)
+# Currency converter library [![Latest Stable Version](https://img.shields.io/packagist/v/redcode/currency-rate.svg?style=flat-square)](https://packagist.org/packages/redcode/currency-rate) [![Total Downloads](https://img.shields.io/packagist/dt/redcode/currency-rate.svg?style=flat-square)](https://packagist.org/packages/redcode/currency-rate)
 
 ###### Useful library for fetching currency rates from cbr and ecb providers
 
