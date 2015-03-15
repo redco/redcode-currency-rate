@@ -12,7 +12,7 @@ use RedCode\Currency\Rate\ICurrencyRateManager;
  */
 class EcbCurrencyRateProvider implements ICurrencyRateProvider
 {
-    CONST PROVIDER_NAME = 'ecb';
+    const PROVIDER_NAME = 'ecb';
 
     /**
      * @var \RedCode\Currency\Rate\ICurrencyRateManager
@@ -43,24 +43,26 @@ class EcbCurrencyRateProvider implements ICurrencyRateProvider
         if ($date === null) {
             $date = new \DateTime('now');
         }
-        if($date->format('Y-m-d') != date('Y-m-d')) {
+
+        if ($date->format('Y-m-d') != date('Y-m-d')) {
             throw new \Exception('ECB service allow load only rates for current date');
         }
 
         $ratesXml = new \SimpleXMLElement(file_get_contents('http://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml'));
 
         $result = array();
-        foreach($currencies as $currency) {
+        foreach ($currencies as $currency) {
             $rate = null;
-            foreach($ratesXml->Cube->Cube->Cube as $ecbRate) {
-                if((string)$ecbRate['currency'] == $currency->getCode()) {
+            foreach ($ratesXml->Cube->Cube->Cube as $ecbRate) {
+                if ((string)$ecbRate['currency'] == $currency->getCode()) {
                     $rate = (float)$ecbRate['rate'];
                     break;
                 }
             }
 
-            if(!$rate)
+            if (!$rate) {
                 continue;
+            }
 
             $rate = $this->currencyRateManager->getNewInstance(
                 $this->currencyManager->getCurrency($currency->getCode()),
@@ -72,6 +74,7 @@ class EcbCurrencyRateProvider implements ICurrencyRateProvider
 
             $result[$currency->getCode()] = $rate;
         }
+
         return $result;
     }
 

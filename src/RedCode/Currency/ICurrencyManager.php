@@ -4,7 +4,7 @@ namespace RedCode\Currency;
 
 /**
  * @author maZahaca
- */ 
+ */
 interface ICurrencyManager
 {
     /**

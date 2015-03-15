@@ -11,5 +11,4 @@ class ProviderNotFoundException extends \Exception
     {
         $this->message = sprintf('Provider for name %s not found', $providerName);
     }
-
 }

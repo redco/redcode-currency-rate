@@ -30,6 +30,11 @@ class CurrencyConverter
      */
     private $currencyManager;
 
+    /**
+     * @param ProviderFactory $providerFactory
+     * @param ICurrencyRateManager $rateManager
+     * @param ICurrencyManager $currencyManager
+     */
     public function __construct(ProviderFactory $providerFactory, ICurrencyRateManager $rateManager, ICurrencyManager $currencyManager)
     {
         $this->providerFactory  = $providerFactory;
@@ -51,24 +56,24 @@ class CurrencyConverter
      */
     public function convert($from, $to, $value, $provider = null, $rateDate = null)
     {
-        if(!($from instanceof ICurrency)) {
+        if (!($from instanceof ICurrency)) {
             $fromStr = $from;
             $from = $this->currencyManager->getCurrency($from);
-            if(!($from instanceof ICurrency)) {
+            if (!($from instanceof ICurrency)) {
                 throw new CurrencyNotFoundException($fromStr);
             }
         }
-        if(!($to instanceof ICurrency)) {
+        if (!($to instanceof ICurrency)) {
             $toStr = $to;
             $to = $this->currencyManager->getCurrency($to);
-            if(!($to instanceof ICurrency)) {
+            if (!($to instanceof ICurrency)) {
                 throw new CurrencyNotFoundException($toStr);
             }
         }
 
         $providers = $provider === null ? $this->providerFactory->getAll() : [$this->providerFactory->get($provider)];
         $providers = array_filter($providers);
-        if(!count($providers)) {
+        if (!count($providers)) {
             throw new ProviderNotFoundException($provider);
         }
 
@@ -82,58 +87,55 @@ class CurrencyConverter
             'provider' => null
         ];
 
-        foreach($providers as $provider) {
+        foreach ($providers as $provider) {
             /** @var ICurrencyRateProvider $provider */
-            if(!$provider->getBaseCurrency()) {
+            if (!$provider->getBaseCurrency()) {
                 throw new ProviderNotFoundException($provider->getName());
             }
 
-            if($from->getCode() != $provider->getBaseCurrency()->getCode()) {
+            if ($from->getCode() != $provider->getBaseCurrency()->getCode()) {
                 /** @var ICurrencyRate $fromRate  */
                 $fromRate = $this->rateManager->getRate($from, $provider, $date);
-                if(!$fromRate) {
+                if (!$fromRate) {
                     $errorParams['currency'] = $from;
                     $errorParams['provider'] = $provider;
                     continue;
                 }
 
-                if(!$provider->isInversed()) {
+                if (!$provider->isInversed()) {
                     $valueBase = $value / ($fromRate->getRate() *  $fromRate->getNominal());
-                }
-                else {
+                } else {
                     $valueBase = $fromRate->getRate() / $fromRate->getNominal() * $value;
                 }
-            }
-            else {
+            } else {
                 $valueBase = $value;
             }
 
-            if($to->getCode() != $provider->getBaseCurrency()->getCode()) {
+            if ($to->getCode() != $provider->getBaseCurrency()->getCode()) {
                 /** @var ICurrencyRate $toRate  */
                 $toRate = $this->rateManager->getRate($to, $provider, $date);
-                if(!$toRate) {
+                if (!$toRate) {
                     $errorParams['currency'] = $to;
                     $errorParams['provider'] = $provider;
                     continue;
                 }
-                if(!$provider->isInversed()) {
+                if (!$provider->isInversed()) {
                     $toRate = $toRate->getNominal() * $toRate->getRate();
-                }
-                else {
+                } else {
                     $toRate = $toRate->getNominal() / $toRate->getRate();
                 }
-            }
-            else {
+            } else {
                 $toRate = 1.0;
             }
 
             $foundValue = $toRate * $valueBase;
 
-            if($foundValue !== null)
+            if ($foundValue !== null) {
                 break;
+            }
         }
 
-        if($foundValue === null) {
+        if ($foundValue === null) {
             throw new RateNotFoundException($errorParams['currency'], $errorParams['provider'], $date);
         }
 

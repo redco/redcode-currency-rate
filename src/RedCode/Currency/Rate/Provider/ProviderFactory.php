@@ -4,7 +4,7 @@ namespace RedCode\Currency\Rate\Provider;
 
 /**
  * @author maZahaca
- */ 
+ */
 class ProviderFactory
 {
     private $providers;
@@ -15,9 +15,9 @@ class ProviderFactory
      */
     public function __construct($providers)
     {
-        if(is_array($providers)) {
-            foreach($providers as $provider) {
-                if(!($provider instanceof ICurrencyRateProvider)) {
+        if (is_array($providers)) {
+            foreach ($providers as $provider) {
+                if (!($provider instanceof ICurrencyRateProvider)) {
                     throw new \Exception('Provider must be instance of ICurrencyRateProvider');
                 }
                 $this->providers[$provider->getName()] = $provider;
@@ -31,7 +31,7 @@ class ProviderFactory
      */
     public function get($name)
     {
-        if(isset($this->providers[$name])) {
+        if (isset($this->providers[$name])) {
             return $this->providers[$name];
         }
     }

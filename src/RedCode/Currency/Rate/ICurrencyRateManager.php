@@ -3,7 +3,6 @@
 namespace RedCode\Currency\Rate;
 
 use RedCode\Currency\ICurrency;
-use RedCode\Currency\Rate\Exception\RateNotFoundException;
 use RedCode\Currency\Rate\Provider\ICurrencyRateProvider;
 
 /**
@@ -26,8 +25,6 @@ interface ICurrencyRateManager
      * @param Provider\ICurrencyRateProvider $provider
      * @param \DateTime $rateDate
      * @return ICurrencyRate|null
-     *
-     * @throws RateNotFoundException
      */
     public function getRate(ICurrency $currency, ICurrencyRateProvider $provider, \DateTime $rateDate = null);
 
