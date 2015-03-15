@@ -3,7 +3,6 @@
 namespace RedCode\Currency\Tests;
 
 use RedCode\Currency\ICurrency;
-use RedCode\Currency\Rate\Provider\CbrCurrencyRateProvider;
 use RedCode\Currency\Rate\Provider\EcbCurrencyRateProvider;
 use RedCode\Currency\Rate\Provider\ICurrencyRateProvider;
 
