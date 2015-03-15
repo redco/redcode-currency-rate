@@ -97,7 +97,6 @@ class CurrencyConverterTest extends \PHPUnit_Framework_TestCase
             ->method('getRate')
             ->will($this->returnCallback(
                     function (ICurrency $currency, ICurrencyRateProvider $provider, \DateTime $rateDate = null) {
-                        $rateValue = null;
                         switch($currency->getCode()) {
                             case 'EUR':
                                 $rateValue = 40;

@@ -51,7 +51,7 @@ class ProviderFactoryTest extends \PHPUnit_Framework_TestCase
      */
     public function testProviderFactoryCreateFailure()
     {
-        $factory = new ProviderFactory(['Not an instance of ICurrencyRateProvider']);
+        return new ProviderFactory(['Not an instance of ICurrencyRateProvider']);
     }
 }
 
