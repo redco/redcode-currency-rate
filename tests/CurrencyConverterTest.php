@@ -21,6 +21,7 @@ class CurrencyConverterTest extends \PHPUnit_Framework_TestCase
 
     public function setUp()
     {
+        $currencies        = [];
         $currencies['RUB'] = $this->getMock('\\RedCode\\Currency\\ICurrency');
         $currencies['RUB']
             ->method('getCode')

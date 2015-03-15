@@ -16,6 +16,7 @@ class CbrCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
 
     public function setUp()
     {
+        $currencies        = [];
         $currencies['RUB'] = $this->getMock('\\RedCode\\Currency\\ICurrency');
         $currencies['RUB']
             ->method('getCode')
@@ -102,6 +103,7 @@ class CbrCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('cbr', $this->currencyRateProvider->getName());
         $this->assertEquals(true, $this->currencyRateProvider->isInversed());
 
+        $currencies        = [];
         $currencies['EUR'] = $this->getMock('\\RedCode\\Currency\\ICurrency');
         $currencies['EUR']
             ->method('getCode')

@@ -16,6 +16,7 @@ class EcbCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
 
     public function setUp()
     {
+        $currencies        = [];
         $currencies['RUB'] = $this->getMock('\\RedCode\\Currency\\ICurrency');
         $currencies['RUB']
             ->method('getCode')
@@ -102,6 +103,7 @@ class EcbCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('ecb', $this->currencyRateProvider->getName());
         $this->assertEquals(false, $this->currencyRateProvider->isInversed());
 
+        $currencies        = [];
         $currencies['RUB'] = $this->getMock('\\RedCode\\Currency\\ICurrency');
         $currencies['RUB']
             ->method('getCode')
@@ -135,6 +137,7 @@ class EcbCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
      */
     public function testEcbCurrencyRateProviderGetRatesYesterday()
     {
+        $currencies        = [];
         $currencies['EUR'] = $this->getMock('\\RedCode\\Currency\\ICurrency');
         $currencies['EUR']
             ->method('getCode')
