@@ -11,6 +11,8 @@ use RedCode\Currency\Rate\Provider\ICurrencyRateProvider;
 interface ICurrencyRateManager
 {
     /**
+     * Create new rate with params
+     *
      * @param \RedCode\Currency\ICurrency $currency
      * @param Provider\ICurrencyRateProvider $provider
      * @param \DateTime $date
@@ -21,14 +23,18 @@ interface ICurrencyRateManager
     public function getNewInstance(ICurrency $currency, ICurrencyRateProvider $provider, \DateTime $date, $rate, $nominal);
 
     /**
+     * Get rate by params
+     *
      * @param \RedCode\Currency\ICurrency $currency
      * @param Provider\ICurrencyRateProvider $provider
      * @param \DateTime $rateDate
-     * @return ICurrencyRate|null
+     * @return ICurrencyRate
      */
     public function getRate(ICurrency $currency, ICurrencyRateProvider $provider, \DateTime $rateDate = null);
 
     /**
+     * Save rates
+     *
      * @param ICurrencyRate[] $rates
      * @return mixed
      */

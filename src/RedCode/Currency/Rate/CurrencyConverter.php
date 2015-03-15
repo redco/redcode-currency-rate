@@ -56,23 +56,10 @@ class CurrencyConverter
      */
     public function convert($from, $to, $value, $provider = null, $rateDate = null)
     {
-        if (!($from instanceof ICurrency)) {
-            $fromStr = $from;
-            $from = $this->currencyManager->getCurrency($from);
-            if (!($from instanceof ICurrency)) {
-                throw new CurrencyNotFoundException($fromStr);
-            }
-        }
-        if (!($to instanceof ICurrency)) {
-            $toStr = $to;
-            $to = $this->currencyManager->getCurrency($to);
-            if (!($to instanceof ICurrency)) {
-                throw new CurrencyNotFoundException($toStr);
-            }
-        }
-
-        $providers = $provider === null ? $this->providerFactory->getAll() : [$this->providerFactory->get($provider)];
-        $providers = array_filter($providers);
+        $to         = $this->getCurrency($to);
+        $from       = $this->getCurrency($from);
+        $providers  = $provider === null ? $this->providerFactory->getAll() : [$this->providerFactory->get($provider)];
+        $providers  = array_filter($providers);
         if (!count($providers)) {
             throw new ProviderNotFoundException($provider);
         }
@@ -103,7 +90,7 @@ class CurrencyConverter
                 }
 
                 if (!$provider->isInversed()) {
-                    $valueBase = $value / ($fromRate->getRate() *  $fromRate->getNominal());
+                    $valueBase = $value / ($fromRate->getRate() * $fromRate->getNominal());
                 } else {
                     $valueBase = $fromRate->getRate() / $fromRate->getNominal() * $value;
                 }
@@ -140,5 +127,22 @@ class CurrencyConverter
         }
 
         return $foundValue;
+    }
+
+    /**
+     * @param string|ICurrency $currency
+     * @return ICurrency
+     * @throws CurrencyNotFoundException
+     */
+    protected function getCurrency($currency)
+    {
+        if (!($currency instanceof ICurrency)) {
+            $code = $currency;
+            $currency = $this->currencyManager->getCurrency($code);
+            if (!($currency instanceof ICurrency)) {
+                throw new CurrencyNotFoundException($code);
+            }
+        }
+        return $currency;
     }
 }
