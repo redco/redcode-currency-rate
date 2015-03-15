@@ -1,6 +1,6 @@
 {
     "name": "redcode/currency-rate",
-    "description": "Classes for currency rate load and convert",
+    "description": "Useful library for fetching currency rates from cbr and ecb providers",
     "type": "library",
     "keywords": ["currency", "rate", "converter", "loader", "cbr.ru", "www.ecb.europa.eu"],
     "homepage": "https://github.com/maZahaca/redcode-currency-rate",
@@ -14,6 +14,11 @@
     ],
     "require": {
         "php": ">=5.4.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "~4.5",
+        "fabpot/php-cs-fixer": "~1.5",
+        "satooshi/php-coveralls": "~0.6"
     },
     "autoload": {
         "psr-0": { "RedCode\\Currency": "src/" }

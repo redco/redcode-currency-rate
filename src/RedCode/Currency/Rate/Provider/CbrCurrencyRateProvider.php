@@ -12,10 +12,10 @@ use RedCode\Currency\Rate\ICurrencyRateManager;
  */
 class CbrCurrencyRateProvider implements ICurrencyRateProvider
 {
-    CONST PROVIDER_NAME = 'cbr';
+    const PROVIDER_NAME = 'cbr';
 
     /**
-     * @var \RedCode\Currency\Rate\ICurrencyRateManager
+     * @var ICurrencyRateManager
      */
     private $currencyRateManager;
 
@@ -43,15 +43,16 @@ class CbrCurrencyRateProvider implements ICurrencyRateProvider
             $date = new \DateTime('now');
         }
 
-        $client = new \SoapClient("http://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx?WSDL");
-        $curs = $client->GetCursOnDate(array("On_date" => $date->format('Y-m-d')));
-        $ratesXml = new \SimpleXMLElement($curs->GetCursOnDateResult->any);
+        $client     = new \SoapClient("http://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx?WSDL");
+        $curs       = $client->GetCursOnDate(array("On_date" => $date->format('Y-m-d')));
+        $ratesXml   = new \SimpleXMLElement($curs->GetCursOnDateResult->any);
 
         $result = array();
-        foreach($currencies as $currency) {
+        foreach ($currencies as $currency) {
             $rateCbr = $ratesXml->xpath('ValuteData/ValuteCursOnDate/VchCode[.="'.$currency->getCode().'"]/parent::*');
-            if(!$rateCbr)
+            if (!$rateCbr) {
                 continue;
+            }
 
             $rate = $this->currencyRateManager->getNewInstance(
                 $this->currencyManager->getCurrency($currency->getCode()),
