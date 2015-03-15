@@ -50,7 +50,7 @@ class CbrCurrencyRateProvider implements ICurrencyRateProvider
         $result = array();
         foreach ($currencies as $currency) {
             $rateCbr = $ratesXml->xpath('ValuteData/ValuteCursOnDate/VchCode[.="'.$currency->getCode().'"]/parent::*');
-            if (!$rateCbr) {
+            if (empty($rateCbr)) {
                 continue;
             }
 
