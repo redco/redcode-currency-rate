@@ -2,9 +2,6 @@
 
 namespace RedCode\Currency\Rate\Exception;
 
-use RedCode\Currency\ICurrency;
-use RedCode\Currency\Rate\Provider\ICurrencyRateProvider;
-
 /**
  * @author maZahaca
  */
