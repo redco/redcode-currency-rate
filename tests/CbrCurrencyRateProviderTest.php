@@ -122,6 +122,12 @@ class CbrCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
             ->willReturn('USD')
         ;
 
+        $currencies['RUB'] = $this->getMock('\\RedCode\\Currency\\ICurrency');
+        $currencies['RUB']
+            ->method('getCode')
+            ->willReturn('RUB')
+        ;
+
         $rates = $currencyRateProvider->getRates(array_values($currencies), new \DateTime('yesterday'));
 
         $this->assertEquals(2, count($rates));

@@ -80,39 +80,18 @@ class CurrencyConverter
                 throw new ProviderNotFoundException($provider->getName());
             }
 
-            if ($from->getCode() != $provider->getBaseCurrency()->getCode()) {
-                /** @var ICurrencyRate $fromRate  */
-                $fromRate = $this->rateManager->getRate($from, $provider, $date);
-                if (!$fromRate) {
-                    $errorParams['currency'] = $from;
-                    $errorParams['provider'] = $provider;
-                    continue;
-                }
-
-                if (!$provider->isInversed()) {
-                    $valueBase = $value / ($fromRate->getRate() * $fromRate->getNominal());
-                } else {
-                    $valueBase = $fromRate->getRate() / $fromRate->getNominal() * $value;
-                }
-            } else {
-                $valueBase = $value;
+            $valueBase = $this->getValueBase($value, $from, $provider, $date);
+            if ($valueBase === null) {
+                $errorParams['currency'] = $from;
+                $errorParams['provider'] = $provider;
+                continue;
             }
 
-            if ($to->getCode() != $provider->getBaseCurrency()->getCode()) {
-                /** @var ICurrencyRate $toRate  */
-                $toRate = $this->rateManager->getRate($to, $provider, $date);
-                if (!$toRate) {
-                    $errorParams['currency'] = $to;
-                    $errorParams['provider'] = $provider;
-                    continue;
-                }
-                if (!$provider->isInversed()) {
-                    $toRate = $toRate->getNominal() * $toRate->getRate();
-                } else {
-                    $toRate = $toRate->getNominal() / $toRate->getRate();
-                }
-            } else {
-                $toRate = 1.0;
+            $toRate = $this->getRate($to, $provider, $date);
+            if ($toRate === null) {
+                $errorParams['currency'] = $to;
+                $errorParams['provider'] = $provider;
+                continue;
             }
 
             $foundValue = $toRate * $valueBase;
@@ -130,11 +109,13 @@ class CurrencyConverter
     }
 
     /**
+     * Extract currency from code or object
+     *
      * @param string|ICurrency $currency
      * @return ICurrency
      * @throws CurrencyNotFoundException
      */
-    protected function getCurrency($currency)
+    private function getCurrency($currency)
     {
         if (!($currency instanceof ICurrency)) {
             $code = $currency;
@@ -144,5 +125,60 @@ class CurrencyConverter
             }
         }
         return $currency;
+    }
+
+    /**
+     * Get base value
+     *
+     * @param float $value
+     * @param ICurrency $currency
+     * @param ICurrencyRateProvider $provider
+     * @param \DateTime|null $date
+     * @return float|null
+     */
+    private function getValueBase($value, ICurrency $currency, ICurrencyRateProvider $provider, $date = null)
+    {
+        $valueBase = $value;
+        if ($currency->getCode() != $provider->getBaseCurrency()->getCode()) {
+            $rate = $this->rateManager->getRate($currency, $provider, $date);
+            if (!$rate) {
+                return null;
+            }
+
+            if (!$provider->isInversed()) {
+                $valueBase = $value / ($rate->getRate() * $rate->getNominal());
+            } else {
+                $valueBase = $rate->getRate() / $rate->getNominal() * $value;
+            }
+        }
+
+        return $valueBase;
+    }
+
+    /**
+     * Get currency rate
+     *
+     * @param ICurrency $currency
+     * @param ICurrencyRateProvider $provider
+     * @param null $date
+     * @return float
+     */
+    private function getRate(ICurrency $currency, ICurrencyRateProvider $provider, $date = null)
+    {
+        if ($currency->getCode() != $provider->getBaseCurrency()->getCode()) {
+            $rate = $this->rateManager->getRate($currency, $provider, $date);
+            if (!$rate) {
+                return null;
+            }
+            if (!$provider->isInversed()) {
+                $rate = $rate->getNominal() * $rate->getRate();
+            } else {
+                $rate = $rate->getNominal() / $rate->getRate();
+            }
+        } else {
+            $rate = 1.0;
+        }
+
+        return $rate;
     }
 }

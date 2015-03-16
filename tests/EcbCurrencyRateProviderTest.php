@@ -109,6 +109,12 @@ class EcbCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
             ->willReturn('RUB')
         ;
 
+        $currencies['EUR'] = $this->getMock('\\RedCode\\Currency\\ICurrency');
+        $currencies['EUR']
+            ->method('getCode')
+            ->willReturn('EUR')
+        ;
+
         $currencies['USD'] = $this->getMock('\\RedCode\\Currency\\ICurrency');
         $currencies['USD']
             ->method('getCode')

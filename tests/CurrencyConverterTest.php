@@ -3,7 +3,10 @@
 namespace RedCode\Currency\Tests;
 
 use RedCode\Currency\ICurrency;
+use RedCode\Currency\ICurrencyManager;
 use RedCode\Currency\Rate\CurrencyConverter;
+use RedCode\Currency\Rate\Exception\ProviderNotFoundException;
+use RedCode\Currency\Rate\ICurrencyRateManager;
 use RedCode\Currency\Rate\Provider\ICurrencyRateProvider;
 use RedCode\Currency\Rate\Provider\ProviderFactory;
 
@@ -17,7 +20,27 @@ class CurrencyConverterTest extends \PHPUnit_Framework_TestCase
     /**
      * @var string
      */
-    private $providerName = 'testProviderName';
+    private $inversedProviderName = 'testInversedProviderName';
+
+    /**
+     * @var string
+     */
+    private $notInversedProviderName = 'testNotInversedProviderName';
+
+    /**
+     * @var string
+     */
+    private $badProviderName = 'badProviderName';
+
+    /**
+     * @var ICurrencyRateManager
+     */
+    private $currencyRateManager;
+
+    /**
+     * @var ICurrencyManager
+     */
+    private $currencyManager;
 
     public function setUp()
     {
@@ -46,23 +69,37 @@ class CurrencyConverterTest extends \PHPUnit_Framework_TestCase
             ->willReturn('GBP')
         ;
 
-        $provider = $this->getMock('\\RedCode\\Currency\\Rate\\Provider\\ICurrencyRateProvider');
-        $provider
+        $inversedProvider = $this->getMock('\\RedCode\\Currency\\Rate\\Provider\\ICurrencyRateProvider');
+        $inversedProvider
             ->method('getName')
-            ->willReturn($this->providerName)
+            ->willReturn($this->inversedProviderName)
         ;
-        $provider
+        $inversedProvider
             ->method('getBaseCurrency')
             ->willReturn($currencies['RUB'])
         ;
-        $provider
+        $inversedProvider
             ->method('isInversed')
             ->willReturn(true)
         ;
-        $factory = new ProviderFactory([$provider]);
+        $notInversedProvider = $this->getMock('\\RedCode\\Currency\\Rate\\Provider\\ICurrencyRateProvider');
+        $notInversedProvider
+            ->method('getName')
+            ->willReturn($this->notInversedProviderName)
+        ;
+        $notInversedProvider
+            ->method('getBaseCurrency')
+            ->willReturn($currencies['EUR'])
+        ;
+        $notInversedProvider
+            ->method('isInversed')
+            ->willReturn(false)
+        ;
 
-        $currencyRateManager = $this->getMock('\\RedCode\\Currency\\Rate\\ICurrencyRateManager');
-        $currencyRateManager
+        $factory = new ProviderFactory([$inversedProvider, $notInversedProvider]);
+
+        $this->currencyRateManager = $this->getMock('\\RedCode\\Currency\\Rate\\ICurrencyRateManager');
+        $this->currencyRateManager
             ->method('getNewInstance')
             ->will($this->returnCallback(
                     function (ICurrency $currency, ICurrencyRateProvider $provider, \DateTime $date, $rateValue, $nominal) {
@@ -93,16 +130,22 @@ class CurrencyConverterTest extends \PHPUnit_Framework_TestCase
             )
         ;
 
-        $currencyRateManager
+        $this->currencyRateManager
             ->method('getRate')
             ->will($this->returnCallback(
                     function (ICurrency $currency, ICurrencyRateProvider $provider, \DateTime $rateDate = null) {
-                        switch($currency->getCode()) {
-                            case 'EUR':
+                        switch(true) {
+                            case $provider->getName() == $this->inversedProviderName && $currency->getCode() == 'EUR':
                                 $rateValue = 40;
                                 break;
-                            case 'USD':
+                            case $provider->getName() == $this->inversedProviderName && $currency->getCode() == 'USD':
                                 $rateValue = 30;
+                                break;
+                            case $provider->getName() == $this->notInversedProviderName && $currency->getCode() == 'RUB':
+                                $rateValue = 40;
+                                break;
+                            case $provider->getName() == $this->notInversedProviderName && $currency->getCode() == 'USD':
+                                $rateValue = 1.13;
                                 break;
                             default:
                                 return null;
@@ -136,8 +179,8 @@ class CurrencyConverterTest extends \PHPUnit_Framework_TestCase
             )
         ;
 
-        $currencyManager = $this->getMock('\\RedCode\\Currency\\ICurrencyManager');
-        $currencyManager
+        $this->currencyManager = $this->getMock('\\RedCode\\Currency\\ICurrencyManager');
+        $this->currencyManager
             ->method('getCurrency')
             ->will($this->returnCallback(function ($name) use ($currencies) {
                 $name = strtoupper($name);
@@ -147,7 +190,7 @@ class CurrencyConverterTest extends \PHPUnit_Framework_TestCase
                 return null;
             }))
         ;
-        $currencyManager
+        $this->currencyManager
             ->method('getAll')
             ->will($this->returnCallback(function () use ($currencies) {
                 return array_values($currencies);
@@ -156,8 +199,8 @@ class CurrencyConverterTest extends \PHPUnit_Framework_TestCase
 
         $this->currencyConverter = new CurrencyConverter(
             $factory,
-            $currencyRateManager,
-            $currencyManager
+            $this->currencyRateManager,
+            $this->currencyManager
         );
 
         $this->assertInstanceOf('\\RedCode\\Currency\\Rate\\CurrencyConverter', $this->currencyConverter);
@@ -165,13 +208,22 @@ class CurrencyConverterTest extends \PHPUnit_Framework_TestCase
 
     public function testCurrencyConverterCreate()
     {
+        $value = $this->currencyConverter->convert('RUB', 'RUB', 1);
+        $this->assertEquals(1, $value);
+
+        $value = $this->currencyConverter->convert('USD', 'USD', 1);
+        $this->assertEquals(1, $value);
+
         $value = $this->currencyConverter->convert('RUB', 'EUR', 40);
         $this->assertEquals(1, $value);
 
-        $value = $this->currencyConverter->convert('RUB', 'EUR', 40, $this->providerName);
+        $value = $this->currencyConverter->convert('RUB', 'EUR', 40, $this->inversedProviderName);
         $this->assertEquals(1, $value);
 
-        $value = $this->currencyConverter->convert('RUB', 'EUR', 40, $this->providerName, new \DateTime());
+        $value = $this->currencyConverter->convert('RUB', 'EUR', 40, $this->inversedProviderName, new \DateTime());
+        $this->assertEquals(1, $value);
+
+        $value = $this->currencyConverter->convert('RUB', 'EUR', 40, $this->inversedProviderName, false);
         $this->assertEquals(1, $value);
 
         $value = $this->currencyConverter->convert('EUR', 'RUB', 1);
@@ -179,12 +231,21 @@ class CurrencyConverterTest extends \PHPUnit_Framework_TestCase
 
         $value = $this->currencyConverter->convert('EUR', 'USD', 1);
         $this->assertEquals(1.33, round($value, 2));
+
+        $value = $this->currencyConverter->convert('RUB', 'EUR', 40, $this->notInversedProviderName);
+        $this->assertEquals(1, $value);
+
+        $value = $this->currencyConverter->convert('EUR', 'RUB', 1, $this->notInversedProviderName);
+        $this->assertEquals(40, $value);
+
+        $value = $this->currencyConverter->convert('EUR', 'USD', 1, $this->notInversedProviderName);
+        $this->assertEquals(1.13, $value);
     }
 
     /**
      * @expectedException \RedCode\Currency\Rate\Exception\ProviderNotFoundException
      */
-    public function testCurrencyConverterCreateProviderNotFound()
+    public function testCurrencyConverterProviderNotFoundException()
     {
         $this->currencyConverter->convert('RUB', 'EUR', 1, 'wrongProvider');
     }
@@ -192,7 +253,7 @@ class CurrencyConverterTest extends \PHPUnit_Framework_TestCase
     /**
      * @expectedException \RedCode\Currency\Rate\Exception\CurrencyNotFoundException
      */
-    public function testCurrencyConverterCreateCurrencyToNotFound()
+    public function testCurrencyConverterCurrencyToNotFoundException()
     {
         $this->currencyConverter->convert('RUB', 'BYR', 1);
     }
@@ -200,7 +261,7 @@ class CurrencyConverterTest extends \PHPUnit_Framework_TestCase
     /**
      * @expectedException \RedCode\Currency\Rate\Exception\CurrencyNotFoundException
      */
-    public function testCurrencyConverterCreateCurrencyFromNotFound()
+    public function testCurrencyConverterCurrencyFromNotFoundException()
     {
         $this->currencyConverter->convert('BYR', 'RUB', 1);
     }
@@ -208,9 +269,38 @@ class CurrencyConverterTest extends \PHPUnit_Framework_TestCase
     /**
      * @expectedException \RedCode\Currency\Rate\Exception\RateNotFoundException
      */
-    public function testCurrencyConverterCreateCurrencyRateNotFound()
+    public function testCurrencyConverterCurrencyToRateNotFoundException()
     {
         $this->currencyConverter->convert('RUB', 'GBP', 1);
+    }
+
+    /**
+     * @expectedException \RedCode\Currency\Rate\Exception\RateNotFoundException
+     */
+    public function testCurrencyConverterCurrencyFromRateNotFoundException()
+    {
+        $this->currencyConverter->convert('GBP', 'RUB', 1);
+    }
+
+    /**
+     * @expectedException \RedCode\Currency\Rate\Exception\ProviderNotFoundException
+     */
+    public function testCurrencyConverterBadProviderNotFoundException()
+    {
+        $badProvider = $this->getMock('\\RedCode\\Currency\\Rate\\Provider\\ICurrencyRateProvider');
+        $badProvider
+            ->method('getName')
+            ->willReturn($this->badProviderName)
+        ;
+
+        $factory            = new ProviderFactory([$badProvider]);
+        $currencyConverter  = new CurrencyConverter(
+            $factory,
+            $this->currencyRateManager,
+            $this->currencyManager
+        );
+
+        $currencyConverter->convert('GBP', 'RUB', 1, $this->badProviderName);
     }
 }
 
