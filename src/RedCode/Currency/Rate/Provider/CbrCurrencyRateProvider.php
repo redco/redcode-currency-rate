@@ -24,6 +24,10 @@ class CbrCurrencyRateProvider implements ICurrencyRateProvider
      */
     private $currencyManager;
 
+    /**
+     * @param ICurrencyRateManager $currencyRateManager
+     * @param ICurrencyManager $currencyManager
+     */
     public function __construct(ICurrencyRateManager $currencyRateManager, ICurrencyManager $currencyManager)
     {
         $this->currencyRateManager  = $currencyRateManager;
