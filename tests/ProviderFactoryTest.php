@@ -48,18 +48,10 @@ class ProviderFactoryTest extends \PHPUnit_Framework_TestCase
     public function testProviderFactoryAddProvider()
     {
         $factory    = new ProviderFactory();
+        $factory->addProvider($this->provider);
         $provider   = $factory->get($this->providerName);
 
         $this->assertInstanceOf(self::PROVIDER_INTERFACE, $provider);
-
-        $factory->addProvider($provider);
-
-        $providers = $factory->getAll();
-        $this->assertEquals(1, count($providers));
-
-        foreach($providers as $provider) {
-            $this->assertInstanceOf('\\RedCode\\Currency\\Rate\\Provider\\ICurrencyRateProvider', $provider);
-        }
     }
 
     /**
