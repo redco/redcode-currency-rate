@@ -45,6 +45,23 @@ class ProviderFactoryTest extends \PHPUnit_Framework_TestCase
         $this->assertNull($factory->get('WrongProviderName'));
     }
 
+    public function testProviderFactoryAddProvider()
+    {
+        $factory    = new ProviderFactory();
+        $provider   = $factory->get($this->providerName);
+
+        $this->assertInstanceOf(self::PROVIDER_INTERFACE, $provider);
+
+        $factory->addProvider($provider);
+
+        $providers = $factory->getAll();
+        $this->assertEquals(1, count($providers));
+
+        foreach($providers as $provider) {
+            $this->assertInstanceOf('\\RedCode\\Currency\\Rate\\Provider\\ICurrencyRateProvider', $provider);
+        }
+    }
+
     /**
      * @expectedException \Exception
      * @expectedExceptionMessage Provider must be instance of ICurrencyRateProvider
