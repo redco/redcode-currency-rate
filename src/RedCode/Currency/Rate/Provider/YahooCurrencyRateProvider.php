@@ -2,7 +2,6 @@
 
 namespace RedCode\Currency\Rate\Provider;
 
-use GuzzleHttp\Client;
 use RedCode\Currency\ICurrency;
 use RedCode\Currency\ICurrencyManager;
 use RedCode\Currency\Rate\ICurrencyRate;
@@ -68,12 +67,14 @@ class YahooCurrencyRateProvider implements ICurrencyRateProvider
         $query .= '&env=store://datatables.org/alltableswithkeys';
         $query = str_replace(' ', '%20', $query);
 
-        $client = new Client();
-        $response = $client->request('GET', $baseUrl . $requestString . $query);
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, $baseUrl . $requestString . $query);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_HEADER, false);
+        $response = curl_exec($curl);
+        curl_close($curl);
 
-        $string = (string) $response->getBody();
-
-        $ratesXml = new \SimpleXMLElement($string);
+        $ratesXml = new \SimpleXMLElement($response);
 
         $currencies = [];
 
@@ -99,14 +100,17 @@ class YahooCurrencyRateProvider implements ICurrencyRateProvider
         $url = 'http://finance.yahoo.com/connection/currency-converter-cache';
         $query = '?date=' . $date->format('Ymd');
 
-        $client = new Client();
-        $response = $client->request('GET', $url . $query);
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, $url . $query);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_HEADER, false);
+        $response = curl_exec($curl);
+        curl_close($curl);
 
-        $jsonResponse = (string)$response->getBody();
         $jsonResponse = str_replace([
             '/**/YAHOO.Finance.CurrencyConverter.addConversionRates(',
             ');'
-        ], '', $jsonResponse);
+        ], '', $response);
 
         $parsedResponse = json_decode($jsonResponse);
 
