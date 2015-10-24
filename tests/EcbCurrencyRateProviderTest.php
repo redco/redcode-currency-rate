@@ -5,6 +5,7 @@ namespace RedCode\Currency\Tests;
 use RedCode\Currency\ICurrency;
 use RedCode\Currency\Rate\Provider\EcbCurrencyRateProvider;
 use RedCode\Currency\Rate\Provider\ICurrencyRateProvider;
+use RedCode\Currency\Rate\XML\XMLLoader;
 
 class EcbCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
 {
@@ -87,7 +88,8 @@ class EcbCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
 
         $this->currencyRateProvider = new EcbCurrencyRateProvider(
             $currencyRateManager,
-            $currencyManager
+            $currencyManager,
+            new XMLLoader()
         );
 
         $this->assertInstanceOf('\\RedCode\\Currency\\Rate\\Provider\\EcbCurrencyRateProvider', $this->currencyRateProvider);
@@ -156,6 +158,35 @@ class EcbCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
         ;
 
         $this->currencyRateProvider->getRates(array_values($currencies), new \DateTime('yesterday'));
+    }
+
+    public function testEcbCurrencyRateProviderGetRatesWithBadXML()
+    {
+        $currencyManager = $this->getMock('\\RedCode\\Currency\\ICurrencyManager');
+        $currencyRateManager = $this->getMock('\\RedCode\\Currency\\Rate\\ICurrencyRateManager');
+
+        $xmlLoader = $this->getMock('\\RedCode\\Currency\\Rate\\XML\\XMLLoader');
+        $xmlLoader
+            ->method('load')
+            ->willReturn(false);
+
+        $this->currencyRateProvider = new EcbCurrencyRateProvider(
+            $currencyRateManager,
+            $currencyManager,
+            $xmlLoader
+        );
+
+        $currencies = [];
+        $currencies['EUR'] = $this->getMock('\\RedCode\\Currency\\ICurrency');
+        $currencies['EUR']
+            ->method('getCode')
+            ->willReturn('EUR');
+
+        try {
+            $this->currencyRateProvider->getRates(array_values($currencies));
+        } catch (\Exception $e) {
+            $this->assertInstanceOf('\\RedCode\\Currency\\Rate\\Exception\\BadXMLQueryException', $e);
+        }
     }
 }
 

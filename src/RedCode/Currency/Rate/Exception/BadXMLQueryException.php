@@ -2,6 +2,8 @@
 
 namespace RedCode\Currency\Rate\Exception;
 
+use RedCode\Currency\Rate\Provider\ICurrencyRateProvider;
+
 class BadXMLQueryException extends \Exception
 {
     /**
@@ -10,20 +12,20 @@ class BadXMLQueryException extends \Exception
     protected $query;
 
     /**
-     * @var string
+     * @var \RedCode\Currency\Rate\Provider\ICurrencyRateProvider
      */
-    protected $providerName;
+    protected $provider;
 
     /**
      * @param string $query
-     * @param string $providerName
+     * @param ICurrencyRateProvider $provider
      */
-    public function __construct($query, $providerName)
+    public function __construct($query, ICurrencyRateProvider $provider)
     {
         $this->query = $query;
-        $this->providerName = $providerName;
+        $this->provider = $provider;
 
-        $this->message = sprintf('Could not create XML from query "%s" for provider %s', $query, $providerName);
+        $this->message = sprintf('Could not create XML from query "%s" for provider %s', $query, $provider->getName());
     }
 
     /**
@@ -35,10 +37,10 @@ class BadXMLQueryException extends \Exception
     }
 
     /**
-     * @return string
+     * @return ICurrencyRateProvider
      */
-    public function getProviderName()
+    public function getProvider()
     {
-        return $this->providerName;
+        return $this->provider;
     }
 }

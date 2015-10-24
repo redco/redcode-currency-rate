@@ -8,6 +8,7 @@ use RedCode\Currency\Rate\ICurrencyRate;
 use RedCode\Currency\Rate\ICurrencyRateManager;
 use RedCode\Currency\Rate\Exception\NoRatesAvailableForDateException;
 use RedCode\Currency\Rate\Exception\BadXMLQueryException;
+use RedCode\Currency\Rate\XML\XMLLoader;
 
 class YahooCurrencyRateProvider implements ICurrencyRateProvider
 {
@@ -25,13 +26,23 @@ class YahooCurrencyRateProvider implements ICurrencyRateProvider
     private $currencyManager;
 
     /**
+     * @var XMLLoader
+     */
+    private $xmlLoader;
+
+    /**
      * @param ICurrencyRateManager $currencyRateManager
      * @param ICurrencyManager $currencyManager
+     * @param XMLLoader $xmlLoader
      */
-    public function __construct(ICurrencyRateManager $currencyRateManager, ICurrencyManager $currencyManager)
-    {
-        $this->currencyRateManager  = $currencyRateManager;
-        $this->currencyManager      = $currencyManager;
+    public function __construct(
+        ICurrencyRateManager $currencyRateManager,
+        ICurrencyManager $currencyManager,
+        XMLLoader $xmlLoader
+    ) {
+        $this->currencyRateManager = $currencyRateManager;
+        $this->currencyManager = $currencyManager;
+        $this->xmlLoader = $xmlLoader;
     }
 
     /**
@@ -63,13 +74,13 @@ class YahooCurrencyRateProvider implements ICurrencyRateProvider
         ];
 
         $query = self::BASE_URL . '?' . http_build_query($queryData);
-        $ratesXml = simplexml_load_file($query);
+        $ratesXml = $this->xmlLoader->load($query);
 
         if (false === $ratesXml) {
-            throw new BadXMLQueryException($query, $this->getName());
+            throw new BadXMLQueryException($query, $this);
         }
         if (0 === count($ratesXml->results->quote)) {
-            throw new NoRatesAvailableForDateException($date, $this->getName());
+            throw new NoRatesAvailableForDateException($date, $this);
         }
 
         $rates = [];

@@ -5,14 +5,10 @@ namespace RedCode\Currency\Tests;
 use RedCode\Currency\ICurrency;
 use RedCode\Currency\Rate\Provider\ICurrencyRateProvider;
 use RedCode\Currency\Rate\Provider\YahooCurrencyRateProvider;
+use RedCode\Currency\Rate\XML\XMLLoader;
 
 class YahooCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
 {
-    /**
-     * @var ICurrencyRateProvider
-     */
-    private $currencyRateProvider;
-
     public function setUp()
     {
         $currencies        = [];
@@ -87,7 +83,8 @@ class YahooCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
 
         $this->currencyRateProvider = new YahooCurrencyRateProvider(
             $currencyRateManager,
-            $currencyManager
+            $currencyManager,
+            new XMLLoader()
         );
 
         $this->assertInstanceOf('\\RedCode\\Currency\\Rate\\Provider\\YahooCurrencyRateProvider', $this->currencyRateProvider);
@@ -130,20 +127,59 @@ class YahooCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
         }
     }
 
-    public function testYahooCurrencyRateProviderGetRatesForVacation()
+    public function testYahooCurrencyRateProviderGetRatesForIncorrectDate()
     {
-        $currencies        = [];
+        $currencies = [];
         $currencies['EUR'] = $this->getMock('\\RedCode\\Currency\\ICurrency');
         $currencies['EUR']
             ->method('getCode')
-            ->willReturn('EUR')
-        ;
+            ->willReturn('EUR');
 
         $currencies['RUB'] = $this->getMock('\\RedCode\\Currency\\ICurrency');
         $currencies['RUB']
             ->method('getCode')
             ->willReturn('RUB')
         ;
-        $rates = $this->currencyRateProvider->getRates(array_values($currencies));
+
+        $currentDate = new \DateTime('now');
+        $estDate = new \DateTime('now', new \DateTimeZone('EST'));
+
+        try {
+            $this->currencyRateProvider->getRates(array_values($currencies));
+        } catch (\Exception $e) {
+            if ((in_array($currentDate->format('w'), ['6', '7'], true)) ||
+                ($currentDate->format('Y-m-d') !== $estDate->format('Y-m-d'))) {
+                $this->assertInstanceOf('\\RedCode\\Currency\\Rate\\Exception\\NoRatesAvailableForDateException', $e);
+            }
+        }
+    }
+
+    public function testYahooCurrencyRateProviderGetRatesWithBadXML()
+    {
+        $currencyManager = $this->getMock('\\RedCode\\Currency\\ICurrencyManager');
+        $currencyRateManager = $this->getMock('\\RedCode\\Currency\\Rate\\ICurrencyRateManager');
+
+        $xmlLoader = $this->getMock('\\RedCode\\Currency\\Rate\\XML\\XMLLoader');
+        $xmlLoader
+            ->method('load')
+            ->willReturn(false);
+
+        $this->currencyRateProvider = new YahooCurrencyRateProvider(
+            $currencyRateManager,
+            $currencyManager,
+            $xmlLoader
+        );
+
+        $currencies = [];
+        $currencies['EUR'] = $this->getMock('\\RedCode\\Currency\\ICurrency');
+        $currencies['EUR']
+            ->method('getCode')
+            ->willReturn('EUR');
+
+        try {
+            $this->currencyRateProvider->getRates(array_values($currencies));
+        } catch (\Exception $e) {
+            $this->assertInstanceOf('\\RedCode\\Currency\\Rate\\Exception\\BadXMLQueryException', $e);
+        }
     }
 }

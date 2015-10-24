@@ -8,6 +8,7 @@ use RedCode\Currency\Rate\Exception\BadXMLQueryException;
 use RedCode\Currency\Rate\Exception\NoRatesAvailableForDateException;
 use RedCode\Currency\Rate\ICurrencyRate;
 use RedCode\Currency\Rate\ICurrencyRateManager;
+use RedCode\Currency\Rate\XML\XMLLoader;
 
 /**
  * @author maZahaca
@@ -30,11 +31,16 @@ class EcbCurrencyRateProvider implements ICurrencyRateProvider
     /**
      * @param ICurrencyRateManager $currencyRateManager
      * @param ICurrencyManager $currencyManager
+     * @param XMLLoader $xmlLoader
      */
-    public function __construct(ICurrencyRateManager $currencyRateManager, ICurrencyManager $currencyManager)
-    {
-        $this->currencyRateManager  = $currencyRateManager;
-        $this->currencyManager      = $currencyManager;
+    public function __construct(
+        ICurrencyRateManager $currencyRateManager,
+        ICurrencyManager $currencyManager,
+        XMLLoader $xmlLoader
+    ) {
+        $this->currencyRateManager = $currencyRateManager;
+        $this->currencyManager = $currencyManager;
+        $this->xmlLoader = $xmlLoader;
     }
 
     /**
@@ -52,16 +58,13 @@ class EcbCurrencyRateProvider implements ICurrencyRateProvider
         }
 
         if ($date->format('Y-m-d') !== date('Y-m-d')) {
-            throw new NoRatesAvailableForDateException($date, $this->getName());
+            throw new NoRatesAvailableForDateException($date, $this);
         }
 
-        $ratesXml = simplexml_load_file(self::BASE_URL);
+        $ratesXml = $this->xmlLoader->load(self::BASE_URL);
 
         if (false === $ratesXml) {
-            throw new BadXMLQueryException(self::BASE_URL, $this->getName());
-        }
-        if (0 === count($ratesXml->Cube->Cube->Cube)) {
-            throw new NoRatesAvailableForDateException($date, $this->getName());
+            throw new BadXMLQueryException(self::BASE_URL, $this);
         }
 
         $result = array();
