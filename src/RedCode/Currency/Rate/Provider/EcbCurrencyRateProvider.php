@@ -4,6 +4,8 @@ namespace RedCode\Currency\Rate\Provider;
 
 use RedCode\Currency\ICurrency;
 use RedCode\Currency\ICurrencyManager;
+use RedCode\Currency\Rate\Exception\BadXMLQueryException;
+use RedCode\Currency\Rate\Exception\NoRatesAvailableForDateException;
 use RedCode\Currency\Rate\ICurrencyRate;
 use RedCode\Currency\Rate\ICurrencyRateManager;
 
@@ -13,6 +15,7 @@ use RedCode\Currency\Rate\ICurrencyRateManager;
 class EcbCurrencyRateProvider implements ICurrencyRateProvider
 {
     const PROVIDER_NAME = 'ecb';
+    const BASE_URL = 'http://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml';
 
     /**
      * @var \RedCode\Currency\Rate\ICurrencyRateManager
@@ -24,6 +27,10 @@ class EcbCurrencyRateProvider implements ICurrencyRateProvider
      */
     private $currencyManager;
 
+    /**
+     * @param ICurrencyRateManager $currencyRateManager
+     * @param ICurrencyManager $currencyManager
+     */
     public function __construct(ICurrencyRateManager $currencyRateManager, ICurrencyManager $currencyManager)
     {
         $this->currencyRateManager  = $currencyRateManager;
@@ -44,17 +51,24 @@ class EcbCurrencyRateProvider implements ICurrencyRateProvider
             $date = new \DateTime('now');
         }
 
-        if ($date->format('Y-m-d') != date('Y-m-d')) {
-            throw new \Exception('ECB service allow load only rates for current date');
+        if ($date->format('Y-m-d') !== date('Y-m-d')) {
+            throw new NoRatesAvailableForDateException($date, $this->getName());
         }
 
-        $ratesXml = new \SimpleXMLElement(file_get_contents('http://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml'));
+        $ratesXml = simplexml_load_file(self::BASE_URL);
+
+        if (false === $ratesXml) {
+            throw new BadXMLQueryException(self::BASE_URL, $this->getName());
+        }
+        if (0 === count($ratesXml->Cube->Cube->Cube)) {
+            throw new NoRatesAvailableForDateException($date, $this->getName());
+        }
 
         $result = array();
         foreach ($currencies as $currency) {
             $rate = null;
             foreach ($ratesXml->Cube->Cube->Cube as $ecbRate) {
-                if ((string)$ecbRate['currency'] == $currency->getCode()) {
+                if ((string)$ecbRate['currency'] === $currency->getCode()) {
                     $rate = (float)$ecbRate['rate'];
                     break;
                 }

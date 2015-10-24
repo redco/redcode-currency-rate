@@ -72,7 +72,7 @@ class YahooCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
             ->method('getCurrency')
             ->will($this->returnCallback(function ($name) use ($currencies) {
                 $name = strtoupper($name);
-                if(isset($currencies[$name])) {
+                if(array_key_exists($name, $currencies)) {
                     return $currencies[$name];
                 }
                 return null;
@@ -109,12 +109,6 @@ class YahooCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
             ->willReturn('EUR')
         ;
 
-        $currencies['USD'] = $this->getMock('\\RedCode\\Currency\\ICurrency');
-        $currencies['USD']
-            ->method('getCode')
-            ->willReturn('USD')
-        ;
-
         $currencies['RUB'] = $this->getMock('\\RedCode\\Currency\\ICurrency');
         $currencies['RUB']
             ->method('getCode')
@@ -128,11 +122,28 @@ class YahooCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
             $this->assertInstanceOf('\\RedCode\\Currency\\Rate\\ICurrencyRate', $rate);
         }
 
-        $rates = $this->currencyRateProvider->getRates(array_values($currencies));
+        $rates = $this->currencyRateProvider->getRates(array_values($currencies), new \DateTime('2015-10-20'));
 
-        $this->assertEquals(3, count($rates));
+        $this->assertEquals(2, count($rates));
         foreach($rates as $rate) {
             $this->assertInstanceOf('\\RedCode\\Currency\\Rate\\ICurrencyRate', $rate);
         }
+    }
+
+    public function testYahooCurrencyRateProviderGetRatesForVacation()
+    {
+        $currencies        = [];
+        $currencies['EUR'] = $this->getMock('\\RedCode\\Currency\\ICurrency');
+        $currencies['EUR']
+            ->method('getCode')
+            ->willReturn('EUR')
+        ;
+
+        $currencies['RUB'] = $this->getMock('\\RedCode\\Currency\\ICurrency');
+        $currencies['RUB']
+            ->method('getCode')
+            ->willReturn('RUB')
+        ;
+        $rates = $this->currencyRateProvider->getRates(array_values($currencies));
     }
 }

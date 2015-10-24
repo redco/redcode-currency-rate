@@ -138,7 +138,7 @@ class EcbCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @expectedException \Exception
-     * @expectedExceptionMessage ECB service allow load only rates for current date
+     * @expectedExceptionMessageRegExp #No rates available for ....-..-.. date with provider ecb#
      */
     public function testEcbCurrencyRateProviderGetRatesYesterday()
     {

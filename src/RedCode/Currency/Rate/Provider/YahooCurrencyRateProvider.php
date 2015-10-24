@@ -6,11 +6,28 @@ use RedCode\Currency\ICurrency;
 use RedCode\Currency\ICurrencyManager;
 use RedCode\Currency\Rate\ICurrencyRate;
 use RedCode\Currency\Rate\ICurrencyRateManager;
+use RedCode\Currency\Rate\Exception\NoRatesAvailableForDateException;
+use RedCode\Currency\Rate\Exception\BadXMLQueryException;
 
 class YahooCurrencyRateProvider implements ICurrencyRateProvider
 {
     const PROVIDER_NAME = 'yahoo';
+    const BASE_URL = 'http://query.yahooapis.com/v1/public/yql';
 
+    /**
+     * @var \RedCode\Currency\Rate\ICurrencyRateManager
+     */
+    private $currencyRateManager;
+
+    /**
+     * @var ICurrencyManager
+     */
+    private $currencyManager;
+
+    /**
+     * @param ICurrencyRateManager $currencyRateManager
+     * @param ICurrencyManager $currencyManager
+     */
     public function __construct(ICurrencyRateManager $currencyRateManager, ICurrencyManager $currencyManager)
     {
         $this->currencyRateManager  = $currencyRateManager;
@@ -24,108 +41,54 @@ class YahooCurrencyRateProvider implements ICurrencyRateProvider
      * @param \DateTime|null $date
      *
      * @return ICurrencyRate[]
+     *
+     * @throws NoRatesAvailableForDateException
+     * @throws BadXMLQueryException
      */
     public function getRates($currencies, \DateTime $date = null)
     {
         $currencyCodes = [];
 
         foreach ($currencies as $currency) {
-            $currencyCodes[] = $currency->getCode();
+            $currencyCodes[] = $currency->getCode() . '=X';
         }
 
         if (null === $date) {
             $date = new \DateTime();
-            $results = $this->_processActualRequest($currencyCodes);
-        } else {
-            $results = $this->_processHistoricalRequest($currencyCodes, $date);
+        }
+
+        $queryData = [
+            'q' => 'select * from yahoo.finance.historicaldata where symbol in ("' . implode('","', $currencyCodes) . '") and startDate = "' . $date->format('Y-m-d') . '" and endDate = "' . $date->format('Y-m-d') . '"',
+            'env' => 'store://datatables.org/alltableswithkeys',
+        ];
+
+        $query = self::BASE_URL . '?' . http_build_query($queryData);
+        $ratesXml = simplexml_load_file($query);
+
+        if (false === $ratesXml) {
+            throw new BadXMLQueryException($query, $this->getName());
+        }
+        if (0 === count($ratesXml->results->quote)) {
+            throw new NoRatesAvailableForDateException($date, $this->getName());
         }
 
         $rates = [];
-        foreach ($results as $code => $rate) {
+        /** @var \SimpleXMLElement $rate */
+        foreach ($ratesXml->results->quote as $quote) {
+            $code = (string)$quote->attributes()['Symbol'];
+            $code = str_replace('%3dX', '', $code);
+            $rate = (float)$quote->Close;
+
             $rates[$code] = $this->currencyRateManager->getNewInstance(
                 $this->currencyManager->getCurrency($code),
                 $this,
                 $date,
-                $rate,
+                (float)$rate,
                 1
             );
         }
 
         return $rates;
-    }
-
-    /**
-     * @param $currencyCodes
-     *
-     * @return array
-     */
-    private function _processActualRequest($currencyCodes)
-    {
-        $baseUrl =  'http://query.yahooapis.com';
-        $requestString = '/v1/public/yql?q=';
-        $query = 'select * from yahoo.finance.xchange where pair in ("'.implode('","', $currencyCodes).'")';
-        $query .= '&env=store://datatables.org/alltableswithkeys';
-        $query = str_replace(' ', '%20', $query);
-
-        $curl = curl_init();
-        curl_setopt($curl, CURLOPT_URL, $baseUrl . $requestString . $query);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($curl, CURLOPT_HEADER, false);
-        $response = curl_exec($curl);
-        curl_close($curl);
-
-        $ratesXml = new \SimpleXMLElement($response);
-
-        $currencies = [];
-
-        /** @var \SimpleXMLElement $rate */
-        foreach ($ratesXml->results->rate as $rate) {
-            $id = (string)$rate->attributes()['id'];
-            $id = str_replace('=X', '', $id);
-
-            $currencies[$id] = (string)$rate->Rate;
-        }
-
-        return $currencies;
-    }
-
-    /**
-     * @param $currencyCodes
-     * @param \DateTime $date
-     *
-     * @return array
-     */
-    private function _processHistoricalRequest($currencyCodes, \DateTime $date)
-    {
-        $url = 'http://finance.yahoo.com/connection/currency-converter-cache';
-        $query = '?date=' . $date->format('Ymd');
-
-        $curl = curl_init();
-        curl_setopt($curl, CURLOPT_URL, $url . $query);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($curl, CURLOPT_HEADER, false);
-        $response = curl_exec($curl);
-        curl_close($curl);
-
-        $jsonResponse = str_replace([
-            '/**/YAHOO.Finance.CurrencyConverter.addConversionRates(',
-            ');'
-        ], '', $response);
-
-        $parsedResponse = json_decode($jsonResponse);
-
-        $currencies = [];
-        foreach ($parsedResponse->list->resources as $resource) {
-            $fields = $resource->resource->fields;
-
-            $symbol = str_replace('=X', '', $fields->symbol);
-
-            if (in_array($symbol, $currencyCodes, true)) {
-                $currencies[$symbol] = $fields->price;
-            }
-        }
-
-        return $currencies;
     }
 
     /**
