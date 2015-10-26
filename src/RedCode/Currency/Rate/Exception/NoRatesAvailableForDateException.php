@@ -7,11 +7,6 @@ use RedCode\Currency\Rate\Provider\ICurrencyRateProvider;
 class NoRatesAvailableForDateException extends \Exception
 {
     /**
-     * @var \RedCode\Currency\ICurrency
-     */
-    protected $currency;
-
-    /**
      * @var \RedCode\Currency\Rate\Provider\ICurrencyRateProvider
      */
     protected $provider;

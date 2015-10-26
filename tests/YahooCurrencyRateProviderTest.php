@@ -112,13 +112,6 @@ class YahooCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
             ->willReturn('RUB')
         ;
 
-        $rates = $this->currencyRateProvider->getRates(array_values($currencies), new \DateTime('yesterday'));
-
-        $this->assertEquals(2, count($rates));
-        foreach($rates as $rate) {
-            $this->assertInstanceOf('\\RedCode\\Currency\\Rate\\ICurrencyRate', $rate);
-        }
-
         $rates = $this->currencyRateProvider->getRates(array_values($currencies), new \DateTime('2015-10-20'));
 
         $this->assertEquals(2, count($rates));
