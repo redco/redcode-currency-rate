@@ -139,7 +139,7 @@ class EcbCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException \Exception
+     * @expectedException \RedCode\Currency\Rate\Exception\NoRatesAvailableForDateException
      * @expectedExceptionMessageRegExp #No rates available for ....-..-.. date with provider ecb#
      */
     public function testEcbCurrencyRateProviderGetRatesYesterday()

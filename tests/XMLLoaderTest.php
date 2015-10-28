@@ -17,11 +17,10 @@ class XMLLoaderTest extends \PHPUnit_Framework_TestCase
     {
         $loader = new XMLLoader();
 
-        libxml_use_internal_errors(true);
-        $loader->load('incorrect_url');
-        $errors = libxml_get_errors();
-
-        self::assertEquals(1, count($errors));
-        self::assertEquals("failed to load external entity \"incorrect_url\"\n", $errors[0]->message);
+        try {
+            $loader->load('http://incorrect_url');
+        } catch (\Exception $e) {
+            self::assertEquals('simplexml_load_file(): php_network_getaddresses: getaddrinfo failed: nodename nor servname provided, or not known', $e->getMessage());
+        }
     }
 }

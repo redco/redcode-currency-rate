@@ -175,4 +175,36 @@ class YahooCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
 
         $this->currencyRateProvider->getRates(array_values($currencies));
     }
+
+    /**
+     * @expectedException \RedCode\Currency\Rate\Exception\NoRatesAvailableForDateException
+     * @expectedExceptionMessageRegExp #No rates available for ....-..-.. date with provider yahoo#
+     */
+    public function testYahooCurrencyRateProviderGetRatesWithNullObject()
+    {
+        $currencyManager = $this->getMock('\\RedCode\\Currency\\ICurrencyManager');
+        $currencyRateManager = $this->getMock('\\RedCode\\Currency\\Rate\\ICurrencyRateManager');
+
+        $quote = (object)['quote' => []];
+        $xmlResponse = (object)['results' => $quote];
+
+        $xmlLoader = $this->getMock('\\RedCode\\Currency\\Rate\\XML\\XMLLoader');
+        $xmlLoader
+            ->method('load')
+            ->willReturn($xmlResponse);
+
+        $this->currencyRateProvider = new YahooCurrencyRateProvider(
+            $currencyRateManager,
+            $currencyManager,
+            $xmlLoader
+        );
+
+        $currencies = [];
+        $currencies['EUR'] = $this->getMock('\\RedCode\\Currency\\ICurrency');
+        $currencies['EUR']
+            ->method('getCode')
+            ->willReturn('EUR');
+
+        $this->currencyRateProvider->getRates(array_values($currencies));
+    }
 }
