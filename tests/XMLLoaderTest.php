@@ -20,7 +20,7 @@ class XMLLoaderTest extends \PHPUnit_Framework_TestCase
         try {
             $loader->load('http://incorrect_url');
         } catch (\Exception $e) {
-            self::assertEquals('simplexml_load_file(): php_network_getaddresses: getaddrinfo failed: nodename nor servname provided, or not known', $e->getMessage());
+            self::assertContains('simplexml_load_file(): php_network_getaddresses:', $e->getMessage());
         }
     }
 }
