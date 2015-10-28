@@ -17,10 +17,11 @@ class XMLLoaderTest extends \PHPUnit_Framework_TestCase
     {
         $loader = new XMLLoader();
 
-        try {
-            $loader->load('incorrect_url');
-        } catch (\Exception $e) {
-            self::assertEquals('simplexml_load_file(): I/O warning : failed to load external entity "incorrect_url"', $e->getMessage());
-        }
+        libxml_use_internal_errors(true);
+        $loader->load('incorrect_url');
+        $errors = libxml_get_errors();
+
+        self::assertEquals(1, count($errors));
+        self::assertEquals("failed to load external entity \"incorrect_url\"\n", $errors[0]->message);
     }
 }
