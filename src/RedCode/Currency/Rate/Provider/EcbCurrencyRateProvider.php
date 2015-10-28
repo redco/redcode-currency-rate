@@ -29,6 +29,11 @@ class EcbCurrencyRateProvider implements ICurrencyRateProvider
     private $currencyManager;
 
     /**
+     * @var XMLLoader
+     */
+    private $xmlLoader;
+
+    /**
      * @param ICurrencyRateManager $currencyRateManager
      * @param ICurrencyManager $currencyManager
      * @param XMLLoader $xmlLoader

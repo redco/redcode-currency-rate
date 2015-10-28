@@ -147,6 +147,10 @@ class YahooCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
         }
     }
 
+    /**
+     * @expectedException \RedCode\Currency\Rate\Exception\BadXMLQueryException
+     * @expectedExceptionMessageRegExp #Could not create XML from query ".*" for provider yahoo#
+     */
     public function testYahooCurrencyRateProviderGetRatesWithBadXML()
     {
         $currencyManager = $this->getMock('\\RedCode\\Currency\\ICurrencyManager');
@@ -169,10 +173,6 @@ class YahooCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
             ->method('getCode')
             ->willReturn('EUR');
 
-        try {
-            $this->currencyRateProvider->getRates(array_values($currencies));
-        } catch (\Exception $e) {
-            $this->assertInstanceOf('\\RedCode\\Currency\\Rate\\Exception\\BadXMLQueryException', $e);
-        }
+        $this->currencyRateProvider->getRates(array_values($currencies));
     }
 }

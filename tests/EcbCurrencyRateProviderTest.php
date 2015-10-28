@@ -160,6 +160,10 @@ class EcbCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
         $this->currencyRateProvider->getRates(array_values($currencies), new \DateTime('yesterday'));
     }
 
+    /**
+     * @expectedException \RedCode\Currency\Rate\Exception\BadXMLQueryException
+     * @expectedExceptionMessageRegExp #Could not create XML from query ".*" for provider ecb#
+     */
     public function testEcbCurrencyRateProviderGetRatesWithBadXML()
     {
         $currencyManager = $this->getMock('\\RedCode\\Currency\\ICurrencyManager');
@@ -182,11 +186,7 @@ class EcbCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
             ->method('getCode')
             ->willReturn('EUR');
 
-        try {
-            $this->currencyRateProvider->getRates(array_values($currencies));
-        } catch (\Exception $e) {
-            $this->assertInstanceOf('\\RedCode\\Currency\\Rate\\Exception\\BadXMLQueryException', $e);
-        }
+        $this->currencyRateProvider->getRates(array_values($currencies));
     }
 }
 
