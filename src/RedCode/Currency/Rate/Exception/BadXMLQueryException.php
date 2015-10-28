@@ -4,17 +4,12 @@ namespace RedCode\Currency\Rate\Exception;
 
 use RedCode\Currency\Rate\Provider\ICurrencyRateProvider;
 
-class BadXMLQueryException extends \Exception
+class BadXMLQueryException extends BaseProviderException
 {
     /**
      * @var string
      */
     protected $query;
-
-    /**
-     * @var \RedCode\Currency\Rate\Provider\ICurrencyRateProvider
-     */
-    protected $provider;
 
     /**
      * @param string $query
@@ -34,13 +29,5 @@ class BadXMLQueryException extends \Exception
     public function getQuery()
     {
         return $this->query;
-    }
-
-    /**
-     * @return ICurrencyRateProvider
-     */
-    public function getProvider()
-    {
-        return $this->provider;
     }
 }
