@@ -20,7 +20,7 @@ class XMLLoaderTest extends \PHPUnit_Framework_TestCase
         try {
             $loader->load('http://incorrect_url');
         } catch (\Exception $e) {
-            self::assertContains('simplexml_load_file(): php_network_getaddresses:', $e->getMessage());
+            self::assertInstanceOf('\\Exception', $e);
         }
     }
 }
