@@ -68,8 +68,6 @@ class ExceptionTest extends \PHPUnit_Framework_TestCase
 
     public function testBadXMLQueryException()
     {
-
-
         $e = new BadXMLQueryException($this->query, $this->currencyRateProvider);
         $this->assertEquals($this->currencyRateProvider, $e->getProvider());
         $this->assertEquals($this->query, $e->getQuery());

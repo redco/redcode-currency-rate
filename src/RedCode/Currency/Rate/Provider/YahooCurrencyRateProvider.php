@@ -86,9 +86,10 @@ class YahooCurrencyRateProvider implements ICurrencyRateProvider
         $rates = [];
         /** @var \SimpleXMLElement $rate */
         foreach ($ratesXml->results->quote as $quote) {
-            $code = (string)$quote->attributes()['Symbol'];
+            $quote = (array)$quote;
+            $code = (string)$quote['@attributes']['Symbol'];
             $code = str_replace('%3dX', '', $code);
-            $rate = (float)$quote->Close;
+            $rate = $quote['Close'];
 
             $rates[$code] = $this->currencyRateManager->getNewInstance(
                 $this->currencyManager->getCurrency($code),

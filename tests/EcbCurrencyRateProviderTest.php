@@ -5,136 +5,138 @@ namespace RedCode\Currency\Tests;
 use RedCode\Currency\ICurrency;
 use RedCode\Currency\Rate\Provider\EcbCurrencyRateProvider;
 use RedCode\Currency\Rate\Provider\ICurrencyRateProvider;
+use RedCode\Currency\ICurrencyManager;
+use RedCode\Currency\Rate\ICurrencyRateManager;
 use RedCode\Currency\Rate\XML\XMLLoader;
 
 class EcbCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
 {
-    /**
-     * @var ICurrencyRateProvider
-     */
-    private $currencyRateProvider;
+    /** @var  ICurrencyRateManager */
+    private $currencyRateManager;
+
+    /** @var  ICurrencyManager */
+    private $currencyManager;
+
+    /** @var  array */
+    private $currencies;
 
     public function setUp()
     {
-        $currencies        = [];
+        $currencies = [];
         $currencies['RUB'] = $this->getMock('\\RedCode\\Currency\\ICurrency');
         $currencies['RUB']
             ->method('getCode')
-            ->willReturn('RUB')
-        ;
+            ->willReturn('RUB');
 
         $currencies['EUR'] = $this->getMock('\\RedCode\\Currency\\ICurrency');
         $currencies['EUR']
             ->method('getCode')
-            ->willReturn('EUR')
-        ;
+            ->willReturn('EUR');
 
         $currencies['USD'] = $this->getMock('\\RedCode\\Currency\\ICurrency');
         $currencies['USD']
             ->method('getCode')
-            ->willReturn('USD')
-        ;
+            ->willReturn('USD');
 
 
         $currencyRateManager = $this->getMock('\\RedCode\\Currency\\Rate\\ICurrencyRateManager');
         $currencyRateManager
             ->method('getNewInstance')
-            ->will($this->returnCallback(
-                    function (ICurrency $currency, ICurrencyRateProvider $provider, \DateTime $date, $rateValue, $nominal) {
+            ->will(
+                self::returnCallback(
+                    function (
+                        ICurrency $currency,
+                        ICurrencyRateProvider $provider,
+                        \DateTime $date,
+                        $rateValue,
+                        $nominal
+                    ) {
                         $rate = $this->getMock('\\RedCode\\Currency\\Rate\\ICurrencyRate');
 
                         $rate
                             ->method('getDate')
-                            ->willReturn($date)
-                        ;
+                            ->willReturn($date);
                         $rate
                             ->method('getRate')
-                            ->willReturn($rateValue)
-                        ;
+                            ->willReturn($rateValue);
                         $rate
                             ->method('getNominal')
-                            ->willReturn($nominal)
-                        ;
+                            ->willReturn($nominal);
                         $rate
                             ->method('getProviderName')
-                            ->willReturn($provider->getName())
-                        ;
+                            ->willReturn($provider->getName());
                         $rate
                             ->method('getCurrency')
-                            ->willReturn($currency)
-                        ;
+                            ->willReturn($currency);
+
                         return $rate;
-                    })
-            )
-        ;
+                    }
+                )
+            );
 
         $currencyManager = $this->getMock('\\RedCode\\Currency\\ICurrencyManager');
         $currencyManager
             ->method('getCurrency')
-            ->will($this->returnCallback(function ($name) use ($currencies) {
-                $name = strtoupper($name);
-                if(isset($currencies[$name])) {
-                    return $currencies[$name];
-                }
-                return null;
-            }))
-        ;
+            ->will(
+                self::returnCallback(
+                    function ($name) use ($currencies) {
+                        $name = strtoupper($name);
+                        if (array_key_exists($name, $currencies)) {
+                            return $currencies[$name];
+                        }
+
+                        return null;
+                    }
+                )
+            );
         $currencyManager
             ->method('getAll')
-            ->will($this->returnCallback(function () use ($currencies) {
-                return array_values($currencies);
-            }))
-        ;
+            ->will(
+                self::returnCallback(
+                    function () use ($currencies) {
+                        return array_values($currencies);
+                    }
+                )
+            );
 
-        $this->currencyRateProvider = new EcbCurrencyRateProvider(
-            $currencyRateManager,
-            $currencyManager,
-            new XMLLoader()
+        $this->currencyRateManager = $currencyRateManager;
+        $this->currencyManager = $currencyManager;
+        $this->currencies = $currencies;
+    }
+
+    public function testEcbCurrencyRateProvider()
+    {
+        $currencyRateProvider = new EcbCurrencyRateProvider(
+            $this->currencyRateManager,
+            $this->currencyManager,
+            $this->_getXMLLoaderMock()
         );
 
-        $this->assertInstanceOf('\\RedCode\\Currency\\Rate\\Provider\\EcbCurrencyRateProvider', $this->currencyRateProvider);
+        self::assertInstanceOf(
+            '\\RedCode\\Currency\\Rate\\Provider\\EcbCurrencyRateProvider',
+            $currencyRateProvider
+        );
+
+        $currency = $currencyRateProvider->getBaseCurrency();
+        self::assertInstanceOf('\\RedCode\\Currency\\ICurrency', $currency);
+        self::assertEquals('EUR', $currency->getCode());
+        self::assertEquals('ecb', $currencyRateProvider->getName());
+        self::assertEquals(false, $currencyRateProvider->isInversed());
     }
 
     public function testEcbCurrencyRateProviderGetRates()
     {
-        $currency = $this->currencyRateProvider->getBaseCurrency();
-        $this->assertInstanceOf('\\RedCode\\Currency\\ICurrency', $currency);
+        $currencyRateProvider = new EcbCurrencyRateProvider(
+            $this->currencyRateManager,
+            $this->currencyManager,
+            new XMLLoader()
+        );
 
-        $this->assertEquals('EUR', $currency->getCode());
-        $this->assertEquals('ecb', $this->currencyRateProvider->getName());
-        $this->assertEquals(false, $this->currencyRateProvider->isInversed());
+        $rates = $currencyRateProvider->getRates(array_values($this->currencies), new \DateTime('today'));
 
-        $currencies        = [];
-        $currencies['RUB'] = $this->getMock('\\RedCode\\Currency\\ICurrency');
-        $currencies['RUB']
-            ->method('getCode')
-            ->willReturn('RUB')
-        ;
-
-        $currencies['EUR'] = $this->getMock('\\RedCode\\Currency\\ICurrency');
-        $currencies['EUR']
-            ->method('getCode')
-            ->willReturn('EUR')
-        ;
-
-        $currencies['USD'] = $this->getMock('\\RedCode\\Currency\\ICurrency');
-        $currencies['USD']
-            ->method('getCode')
-            ->willReturn('USD')
-        ;
-
-        $rates = $this->currencyRateProvider->getRates(array_values($currencies), new \DateTime('today'));
-
-        $this->assertEquals(2, count($rates));
-        foreach($rates as $rate) {
-            $this->assertInstanceOf('\\RedCode\\Currency\\Rate\\ICurrencyRate', $rate);
-        }
-
-        $rates = $this->currencyRateProvider->getRates(array_values($currencies));
-
-        $this->assertEquals(2, count($rates));
-        foreach($rates as $rate) {
-            $this->assertInstanceOf('\\RedCode\\Currency\\Rate\\ICurrencyRate', $rate);
+        self::assertEquals(2, count($rates));
+        foreach ($rates as $rate) {
+            self::assertInstanceOf('\\RedCode\\Currency\\Rate\\ICurrencyRate', $rate);
         }
     }
 
@@ -144,20 +146,13 @@ class EcbCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
      */
     public function testEcbCurrencyRateProviderGetRatesYesterday()
     {
-        $currencies        = [];
-        $currencies['EUR'] = $this->getMock('\\RedCode\\Currency\\ICurrency');
-        $currencies['EUR']
-            ->method('getCode')
-            ->willReturn('EUR')
-        ;
+        $currencyRateProvider = new EcbCurrencyRateProvider(
+            $this->currencyRateManager,
+            $this->currencyManager,
+            $this->_getXMLLoaderMock()
+        );
 
-        $currencies['USD'] = $this->getMock('\\RedCode\\Currency\\ICurrency');
-        $currencies['USD']
-            ->method('getCode')
-            ->willReturn('USD')
-        ;
-
-        $this->currencyRateProvider->getRates(array_values($currencies), new \DateTime('yesterday'));
+        $currencyRateProvider->getRates(array_values($this->currencies), new \DateTime('yesterday'));
     }
 
     /**
@@ -166,27 +161,56 @@ class EcbCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
      */
     public function testEcbCurrencyRateProviderGetRatesWithBadXML()
     {
-        $currencyManager = $this->getMock('\\RedCode\\Currency\\ICurrencyManager');
-        $currencyRateManager = $this->getMock('\\RedCode\\Currency\\Rate\\ICurrencyRateManager');
+        $currencyRateProvider = new EcbCurrencyRateProvider(
+            $this->currencyRateManager,
+            $this->currencyManager,
+            $this->_getXMLLoaderMockWithLoadFalse()
+        );
 
+        $currencyRateProvider->getRates(array_values($this->currencies));
+    }
+
+    /**
+     * @return XMLLoader
+     */
+    private function _getXMLLoaderMock()
+    {
+        $xmlResponse = (object)[
+            'Cube' => (object)[
+                'Cube' => (object)[
+                    'Cube' => [
+                        [
+                            'currency' => 'RUB',
+                            'rate'     => '0.71820',
+                        ],
+                        [
+                            'currency' => 'USD',
+                            'rate'     => '1.1017',
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $xmlLoader = $this->getMock('\\RedCode\\Currency\\Rate\\XML\\XMLLoader');
+        $xmlLoader
+            ->method('load')
+            ->willReturn($xmlResponse);
+
+        return $xmlLoader;
+    }
+
+    /**
+     * @return XMLLoader
+     */
+    private function _getXMLLoaderMockWithLoadFalse()
+    {
         $xmlLoader = $this->getMock('\\RedCode\\Currency\\Rate\\XML\\XMLLoader');
         $xmlLoader
             ->method('load')
             ->willReturn(false);
 
-        $this->currencyRateProvider = new EcbCurrencyRateProvider(
-            $currencyRateManager,
-            $currencyManager,
-            $xmlLoader
-        );
-
-        $currencies = [];
-        $currencies['EUR'] = $this->getMock('\\RedCode\\Currency\\ICurrency');
-        $currencies['EUR']
-            ->method('getCode')
-            ->willReturn('EUR');
-
-        $this->currencyRateProvider->getRates(array_values($currencies));
+        return $xmlLoader;
     }
 }
 
