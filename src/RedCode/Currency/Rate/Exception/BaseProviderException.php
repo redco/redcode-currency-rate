@@ -9,7 +9,15 @@ abstract class BaseProviderException extends \Exception
     /**
      * @var \RedCode\Currency\Rate\Provider\ICurrencyRateProvider
      */
-    protected $provider;
+    private $provider;
+
+    /**
+     * @param ICurrencyRateProvider $provider
+     */
+    public function __construct(ICurrencyRateProvider $provider)
+    {
+        $this->provider = $provider;
+    }
 
     /**
      * @return ICurrencyRateProvider

@@ -9,7 +9,7 @@ class BadXMLQueryException extends BaseProviderException
     /**
      * @var string
      */
-    protected $query;
+    private $query;
 
     /**
      * @param string $query
@@ -17,8 +17,8 @@ class BadXMLQueryException extends BaseProviderException
      */
     public function __construct($query, ICurrencyRateProvider $provider)
     {
+        parent::__construct($provider);
         $this->query = $query;
-        $this->provider = $provider;
 
         $this->message = sprintf('Could not create XML from query "%s" for provider %s', $query, $provider->getName());
     }

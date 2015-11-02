@@ -17,8 +17,8 @@ class NoRatesAvailableForDateException extends BaseProviderException
      */
     public function __construct(\DateTime $date, ICurrencyRateProvider $provider)
     {
+        parent::__construct($provider);
         $this->date = $date;
-        $this->provider = $provider;
 
         $this->message = sprintf('No rates available for %s date with provider %s', $date->format('Y-m-d'), $provider->getName());
     }
