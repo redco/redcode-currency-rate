@@ -3,13 +3,13 @@
 namespace RedCode\Currency\Tests;
 
 use RedCode\Currency\ICurrency;
-use RedCode\Currency\Rate\Provider\EcbCurrencyRateProvider;
 use RedCode\Currency\Rate\Provider\ICurrencyRateProvider;
+use RedCode\Currency\Rate\Provider\YahooCurrencyRateProvider;
 use RedCode\Currency\ICurrencyManager;
 use RedCode\Currency\Rate\ICurrencyRateManager;
 use RedCode\Currency\Rate\XML\XMLLoader;
 
-class EcbCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
+class YahooCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
 {
     /** @var  ICurrencyRateManager */
     private $currencyRateManager;
@@ -22,7 +22,6 @@ class EcbCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $currencies = [];
         $currencies['RUB'] = $this->getMock('\\RedCode\\Currency\\ICurrency');
         $currencies['RUB']
             ->method('getCode')
@@ -37,7 +36,6 @@ class EcbCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
         $currencies['USD']
             ->method('getCode')
             ->willReturn('USD');
-
 
         $currencyRateManager = $this->getMock('\\RedCode\\Currency\\Rate\\ICurrencyRateManager');
         $currencyRateManager
@@ -104,35 +102,35 @@ class EcbCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
         $this->currencies = $currencies;
     }
 
-    public function testEcbCurrencyRateProvider()
+    public function testYahooCurrencyRateProvider()
     {
-        $currencyRateProvider = new EcbCurrencyRateProvider(
+        $currencyRateProvider = new YahooCurrencyRateProvider(
             $this->currencyRateManager,
             $this->currencyManager,
             $this->_getXMLLoaderMock()
         );
 
         self::assertInstanceOf(
-            '\\RedCode\\Currency\\Rate\\Provider\\EcbCurrencyRateProvider',
+            '\\RedCode\\Currency\\Rate\\Provider\\YahooCurrencyRateProvider',
             $currencyRateProvider
         );
 
         $currency = $currencyRateProvider->getBaseCurrency();
         self::assertInstanceOf('\\RedCode\\Currency\\ICurrency', $currency);
-        self::assertEquals('EUR', $currency->getCode());
-        self::assertEquals('ecb', $currencyRateProvider->getName());
+        self::assertEquals('USD', $currency->getCode());
+        self::assertEquals('yahoo', $currencyRateProvider->getName());
         self::assertEquals(false, $currencyRateProvider->isInversed());
     }
 
-    public function testEcbCurrencyRateProviderGetRates()
+    public function testYahooCurrencyRateProviderGetRates()
     {
-        $currencyRateProvider = new EcbCurrencyRateProvider(
+        $currencyRateProvider = new YahooCurrencyRateProvider(
             $this->currencyRateManager,
             $this->currencyManager,
-            new XMLLoader()
+            $this->_getXMLLoaderMock()
         );
 
-        $rates = $currencyRateProvider->getRates(array_values($this->currencies), new \DateTime('today'));
+        $rates = $currencyRateProvider->getRates(array_values($this->currencies), new \DateTime('2015-10-20'));
 
         self::assertEquals(2, count($rates));
         foreach ($rates as $rate) {
@@ -140,56 +138,97 @@ class EcbCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
         }
     }
 
-    /**
-     * @expectedException \RedCode\Currency\Rate\Exception\NoRatesAvailableForDateException
-     * @expectedExceptionMessageRegExp #No rates available for ....-..-.. date with provider ecb#
-     */
-    public function testEcbCurrencyRateProviderGetRatesYesterday()
+    public function testYahooCurrencyRateProviderGetRatesForIncorrectDate()
     {
-        $currencyRateProvider = new EcbCurrencyRateProvider(
+        $currentDate = new \DateTime('now');
+        $estDate = new \DateTime('now', new \DateTimeZone('EST'));
+
+        $currencyRateProvider = new YahooCurrencyRateProvider(
             $this->currencyRateManager,
             $this->currencyManager,
-            $this->_getXMLLoaderMock()
+            new XMLLoader()
         );
 
-        $currencyRateProvider->getRates(array_values($this->currencies), new \DateTime('yesterday'));
+        try {
+            $currencyRateProvider->getRates(array_values($this->currencies));
+        } catch (\Exception $e) {
+            if ((in_array($currentDate->format('w'), ['6', '7'], true)) ||
+                ($currentDate->format('Y-m-d') !== $estDate->format('Y-m-d'))
+            ) {
+                self::assertInstanceOf(
+                    '\\RedCode\\Currency\\Rate\\Exception\\NoRatesAvailableForDateException',
+                    $e
+                );
+            }
+        }
     }
 
     /**
      * @expectedException \RedCode\Currency\Rate\Exception\BadXMLQueryException
-     * @expectedExceptionMessageRegExp #Could not create XML from query ".*" for provider ecb#
+     * @expectedExceptionMessageRegExp #Could not create XML from query ".*" for provider yahoo#
      */
-    public function testEcbCurrencyRateProviderGetRatesWithBadXML()
+    public function testYahooCurrencyRateProviderGetRatesWithBadXML()
     {
-        $currencyRateProvider = new EcbCurrencyRateProvider(
+        $currencyRateProvider = new YahooCurrencyRateProvider(
             $this->currencyRateManager,
             $this->currencyManager,
             $this->_getXMLLoaderMockWithLoadFalse()
         );
 
-        $currencyRateProvider->getRates(array_values($this->currencies));
+        $currencies = [];
+        $currencies['EUR'] = $this->getMock('\\RedCode\\Currency\\ICurrency');
+        $currencies['EUR']
+            ->method('getCode')
+            ->willReturn('EUR');
+
+        $currencyRateProvider->getRates(array_values($currencies));
     }
 
     /**
+     * @expectedException \RedCode\Currency\Rate\Exception\NoRatesAvailableForDateException
+     * @expectedExceptionMessageRegExp #No rates available for ....-..-.. date with provider yahoo#
+     */
+    public function testYahooCurrencyRateProviderGetRatesWithNullObject()
+    {
+        $currencyRateProvider = new YahooCurrencyRateProvider(
+            $this->currencyRateManager,
+            $this->currencyManager,
+            $this->_getXMLLoaderMock(true)
+        );
+
+        $currencyRateProvider->getRates(array_values($this->currencies), new \DateTime('2015-10-25'));
+    }
+
+    /**
+     * @param bool|false $empty
+     *
      * @return XMLLoader
      */
-    private function _getXMLLoaderMock()
+    private function _getXMLLoaderMock($empty = false)
     {
-        $xmlResponse = (object)[
-            'Cube' => (object)[
-                'Cube' => (object)[
-                    'Cube' => [
-                        [
-                            'currency' => 'RUB',
-                            'rate'     => '0.71820',
-                        ],
-                        [
-                            'currency' => 'USD',
-                            'rate'     => '1.1017',
-                        ],
-                    ],
+        $quote = [
+            'quote' => [
+                [
+                    '@attributes' =>
+                        ['Symbol' => 'RUB%3dX'],
+                    'Close'       => '0.47',
+                ],
+                [
+                    '@attributes' =>
+                        ['Symbol' => 'EUR%3dX'],
+                    'Close'       => '0.12',
                 ],
             ],
+        ];
+
+        if (true === $empty) {
+            $quote = [
+                'quote' => null,
+            ];
+        }
+
+        $xmlResponse = (object)[
+            'results' => (object)$quote,
         ];
 
         $xmlLoader = $this->getMock('\\RedCode\\Currency\\Rate\\XML\\XMLLoader');
@@ -213,4 +252,3 @@ class EcbCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
         return $xmlLoader;
     }
 }
-
