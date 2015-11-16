@@ -1,4 +1,4 @@
-# Currency converter library [![Latest Stable Version](https://img.shields.io/packagist/v/redcode/currency-rate.svg?style=flat)](https://packagist.org/packages/redcode/currency-rate) [![Total Downloads](https://img.shields.io/packagist/dt/redcode/currency-rate.svg?style=flat)](https://packagist.org/packages/redcode/currency-rate)
+# Currency Rates converter library [![Latest Stable Version](https://img.shields.io/packagist/v/redcode/currency-rate.svg?style=flat)](https://packagist.org/packages/redcode/currency-rate) [![Total Downloads](https://img.shields.io/packagist/dt/redcode/currency-rate.svg?style=flat)](https://packagist.org/packages/redcode/currency-rate)
 
 [![Build Status](https://img.shields.io/travis/redco/redcode-currency-rate.svg?style=flat)](https://travis-ci.org/redco/redcode-currency-rate)
 [![Code Coverage](https://img.shields.io/scrutinizer/coverage/g/redco/redcode-currency-rate.svg?style=flat)](https://scrutinizer-ci.com/g/redco/redcode-currency-rate/?branch=master)
@@ -18,9 +18,37 @@ composer require redcode/currency-rate
 
 ## Documentation
 
-@todo write docs
+First of all you need to implement services [ICurrencyRateManager](https://github.com/redco/redcode-currency-rate-bundle/blob/master/Manager/CurrencyRateManager.php), [ICurrencyManager](https://github.com/redco/redcode-currency-rate-bundle/blob/master/Manager/CurrencyManager.php). Then DTO or Entity objects  [Currency](https://github.com/redco/redcode-currency-rate-bundle/blob/master/Model/Currency.php) and [CurrencyRate](https://github.com/redco/redcode-currency-rate-bundle/blob/master/Model/CurrencyRate.php).
 
-Contribute
-----------
+After that create and configure currencyConverter:
+```php
+use RedCode\Currency\Rate;
+
+// we have initialized $currencyRateManager and $currencyManager
+
+$providerFactory = new Provider\ProviderFactory();
+$providerFactory->addProvider(
+  new Provider\EcbCurrencyRateProvider`(
+    $currencyRateManager, 
+    $currencyManager
+  )
+);
+
+$converter = new CurrencyConverter(
+  $providerFactory, 
+  $currencyRateManager, 
+  $currencyManager
+);
+
+$convertedValue = $converter->convert('USD', 'GBP', 100);
+```
+
+## Tests
+To run [tests](https://github.com/redco/redcode-currency-rate/tree/master/tests) use command below:
+```shell
+./tests/runTests.sh
+```
+
+## Contribute
 
 Pull requests are welcome. Please see our [CONTRIBUTING](https://github.com/redco/redcode-currency-rate/blob/master/CONTRIBUTING.md) guide.
