@@ -6,6 +6,8 @@ use RedCode\Currency\ICurrency;
 use RedCode\Currency\ICurrencyManager;
 use RedCode\Currency\Rate\ICurrencyRate;
 use RedCode\Currency\Rate\ICurrencyRateManager;
+use RedCode\Currency\Rate\SOAP\SOAPLoader;
+use RedCode\Currency\Rate\XML\XMLParser;
 
 /**
  * @author maZahaca
@@ -13,25 +15,36 @@ use RedCode\Currency\Rate\ICurrencyRateManager;
 class CbrCurrencyRateProvider implements ICurrencyRateProvider
 {
     const PROVIDER_NAME = 'cbr';
+    const BASE_URL = 'http://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx?WSDL';
 
-    /**
-     * @var ICurrencyRateManager
-     */
+    /**@var ICurrencyRateManager */
     private $currencyRateManager;
 
-    /**
-     * @var ICurrencyManager
-     */
+    /**@var ICurrencyManager */
     private $currencyManager;
+
+    /** @var SOAPLoader */
+    private $soapLoader;
+
+    /** @var XMLParser */
+    private $xmlParser;
 
     /**
      * @param ICurrencyRateManager $currencyRateManager
      * @param ICurrencyManager $currencyManager
+     * @param SOAPLoader $soapLoader
+     * @param XMLParser $xmlParser
      */
-    public function __construct(ICurrencyRateManager $currencyRateManager, ICurrencyManager $currencyManager)
+    public function __construct(
+        ICurrencyRateManager $currencyRateManager,
+        ICurrencyManager $currencyManager,
+        SOAPLoader $soapLoader,
+        XMLParser $xmlParser)
     {
-        $this->currencyRateManager  = $currencyRateManager;
-        $this->currencyManager      = $currencyManager;
+        $this->currencyRateManager = $currencyRateManager;
+        $this->currencyManager = $currencyManager;
+        $this->soapLoader = $soapLoader;
+        $this->xmlParser = $xmlParser;
     }
 
     /**
@@ -47,26 +60,24 @@ class CbrCurrencyRateProvider implements ICurrencyRateProvider
             $date = new \DateTime('now');
         }
 
-        $client     = new \SoapClient("http://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx?WSDL");
-        $curs       = $client->GetCursOnDate(array("On_date" => $date->format('Y-m-d')));
-        $ratesXml   = new \SimpleXMLElement($curs->GetCursOnDateResult->any);
+        $rawXml = $this->soapLoader->load(self::BASE_URL, $date);
+        $ratesXml = $this->xmlParser->parse($rawXml);
 
         $result = array();
         foreach ($currencies as $currency) {
-            $rateCbr = $ratesXml->xpath('ValuteData/ValuteCursOnDate/VchCode[.="'.$currency->getCode().'"]/parent::*');
-            if (empty($rateCbr)) {
-                continue;
+            $rateCbr = $ratesXml->xpath('ValuteData/ValuteCursOnDate/VchCode[.="' . $currency->getCode() . '"]/parent::*');
+
+            if (null !== $rateCbr) {
+                $rate = $this->currencyRateManager->getNewInstance(
+                    $this->currencyManager->getCurrency($currency->getCode()),
+                    $this,
+                    $date,
+                    (float)$rateCbr[0]->Vcurs,
+                    (int)$rateCbr[0]->Vnom
+                );
+
+                $result[$currency->getCode()] = $rate;
             }
-
-            $rate = $this->currencyRateManager->getNewInstance(
-                $this->currencyManager->getCurrency($currency->getCode()),
-                $this,
-                $date,
-                (float)$rateCbr[0]->Vcurs,
-                (int)$rateCbr[0]->Vnom
-            );
-
-            $result[$currency->getCode()] = $rate;
         }
         return $result;
     }
