@@ -4,8 +4,11 @@ namespace RedCode\Currency\Rate\Provider;
 
 use RedCode\Currency\ICurrency;
 use RedCode\Currency\ICurrencyManager;
+use RedCode\Currency\Rate\Exception\BadXMLQueryException;
+use RedCode\Currency\Rate\Exception\NoRatesAvailableForDateException;
 use RedCode\Currency\Rate\ICurrencyRate;
 use RedCode\Currency\Rate\ICurrencyRateManager;
+use RedCode\Currency\Rate\XML\XMLLoader;
 
 /**
  * @author maZahaca
@@ -13,6 +16,7 @@ use RedCode\Currency\Rate\ICurrencyRateManager;
 class EcbCurrencyRateProvider implements ICurrencyRateProvider
 {
     const PROVIDER_NAME = 'ecb';
+    const BASE_URL = 'http://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml';
 
     /**
      * @var \RedCode\Currency\Rate\ICurrencyRateManager
@@ -24,10 +28,24 @@ class EcbCurrencyRateProvider implements ICurrencyRateProvider
      */
     private $currencyManager;
 
-    public function __construct(ICurrencyRateManager $currencyRateManager, ICurrencyManager $currencyManager)
-    {
-        $this->currencyRateManager  = $currencyRateManager;
-        $this->currencyManager      = $currencyManager;
+    /**
+     * @var XMLLoader
+     */
+    private $xmlLoader;
+
+    /**
+     * @param ICurrencyRateManager $currencyRateManager
+     * @param ICurrencyManager $currencyManager
+     * @param XMLLoader $xmlLoader
+     */
+    public function __construct(
+        ICurrencyRateManager $currencyRateManager,
+        ICurrencyManager $currencyManager,
+        XMLLoader $xmlLoader
+    ) {
+        $this->currencyRateManager = $currencyRateManager;
+        $this->currencyManager = $currencyManager;
+        $this->xmlLoader = $xmlLoader;
     }
 
     /**
@@ -44,17 +62,21 @@ class EcbCurrencyRateProvider implements ICurrencyRateProvider
             $date = new \DateTime('now');
         }
 
-        if ($date->format('Y-m-d') != date('Y-m-d')) {
-            throw new \Exception('ECB service allow load only rates for current date');
+        if ($date->format('Y-m-d') !== date('Y-m-d')) {
+            throw new NoRatesAvailableForDateException($date, $this);
         }
 
-        $ratesXml = new \SimpleXMLElement(file_get_contents('http://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml'));
+        $ratesXml = $this->xmlLoader->load(self::BASE_URL);
+
+        if (false === $ratesXml) {
+            throw new BadXMLQueryException(self::BASE_URL, $this);
+        }
 
         $result = array();
         foreach ($currencies as $currency) {
             $rate = null;
             foreach ($ratesXml->Cube->Cube->Cube as $ecbRate) {
-                if ((string)$ecbRate['currency'] == $currency->getCode()) {
+                if ((string)$ecbRate['currency'] === $currency->getCode()) {
                     $rate = (float)$ecbRate['rate'];
                     break;
                 }
