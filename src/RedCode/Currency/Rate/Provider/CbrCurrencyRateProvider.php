@@ -7,7 +7,6 @@ use RedCode\Currency\ICurrencyManager;
 use RedCode\Currency\Rate\ICurrencyRate;
 use RedCode\Currency\Rate\ICurrencyRateManager;
 use RedCode\Currency\Rate\SOAP\SOAPLoader;
-use RedCode\Currency\Rate\XML\XMLParser;
 
 /**
  * @author maZahaca
@@ -26,25 +25,19 @@ class CbrCurrencyRateProvider implements ICurrencyRateProvider
     /** @var SOAPLoader */
     private $soapLoader;
 
-    /** @var XMLParser */
-    private $xmlParser;
-
     /**
      * @param ICurrencyRateManager $currencyRateManager
      * @param ICurrencyManager $currencyManager
      * @param SOAPLoader $soapLoader
-     * @param XMLParser $xmlParser
      */
     public function __construct(
         ICurrencyRateManager $currencyRateManager,
         ICurrencyManager $currencyManager,
-        SOAPLoader $soapLoader,
-        XMLParser $xmlParser)
+        SOAPLoader $soapLoader)
     {
         $this->currencyRateManager = $currencyRateManager;
         $this->currencyManager = $currencyManager;
         $this->soapLoader = $soapLoader;
-        $this->xmlParser = $xmlParser;
     }
 
     /**
@@ -60,14 +53,16 @@ class CbrCurrencyRateProvider implements ICurrencyRateProvider
             $date = new \DateTime('now');
         }
 
+        $this->soapLoader = new SOAPLoader();
+
         $rawXml = $this->soapLoader->load(self::BASE_URL, $date);
-        $ratesXml = $this->xmlParser->parse($rawXml);
+        $ratesXml = new \SimpleXMLElement($rawXml);
 
         $result = array();
         foreach ($currencies as $currency) {
             $rateCbr = $ratesXml->xpath('ValuteData/ValuteCursOnDate/VchCode[.="' . $currency->getCode() . '"]/parent::*');
 
-            if (null !== $rateCbr) {
+            if (count($rateCbr) > 0) {
                 $rate = $this->currencyRateManager->getNewInstance(
                     $this->currencyManager->getCurrency($currency->getCode()),
                     $this,

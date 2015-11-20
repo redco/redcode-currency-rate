@@ -89,8 +89,7 @@ class CbrCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
         $currencyRateProvider = new CbrCurrencyRateProvider(
             $this->currencyRateManager,
             $this->currencyManager,
-            $this->_getSOAPLoaderMock(),
-            $this->_getXMLParserMock()
+            $this->getSOAPLoaderMock()
         );
 
         self::assertInstanceOf(
@@ -110,13 +109,12 @@ class CbrCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
         $currencyRateProvider = new CbrCurrencyRateProvider(
             $this->currencyRateManager,
             $this->currencyManager,
-            $this->_getSOAPLoaderMock(),
-            $this->_getXMLParserMock()
+            $this->getSOAPLoaderMock()
         );
 
         $rates = $currencyRateProvider->getRates(array_values($this->currencies));
 
-        $this->assertEquals(3, count($rates));
+        $this->assertEquals(2, count($rates));
         foreach ($rates as $rate) {
             $this->assertInstanceOf('\\RedCode\\Currency\\Rate\\ICurrencyRate', $rate);
         }
@@ -127,13 +125,12 @@ class CbrCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
         $currencyRateProvider = new CbrCurrencyRateProvider(
             $this->currencyRateManager,
             $this->currencyManager,
-            $this->_getSOAPLoaderMock(),
-            $this->_getXMLParserMock()
+            $this->getSOAPLoaderMock()
         );
 
         $rates = $currencyRateProvider->getRates(array_values($this->currencies), new \DateTime('yesterday'));
 
-        $this->assertEquals(3, count($rates));
+        $this->assertEquals(2, count($rates));
         foreach ($rates as $rate) {
             $this->assertInstanceOf('\\RedCode\\Currency\\Rate\\ICurrencyRate', $rate);
         }
@@ -142,40 +139,13 @@ class CbrCurrencyRateProviderTest extends \PHPUnit_Framework_TestCase
     /**
      * @return SOAPLoader
      */
-    private function _getSOAPLoaderMock()
+    private function getSOAPLoaderMock()
     {
         $soapLoader = $this->getMock('\\RedCode\\Currency\\Rate\\SOAP\\SOAPLoader');
         $soapLoader
             ->method('load')
-            ->willReturn(false);
+            ->willReturn(file_get_contents(__DIR__ . '/cbr.test.xml'));
 
         return $soapLoader;
-    }
-
-    /**
-     * @return XMLParser
-     */
-    private function _getXMLParserMock()
-    {
-        $xmlParser = $this->getMock('\\RedCode\\Currency\\Rate\\XML\\XMLParser');
-        $xmlParser
-            ->method('parse')
-            ->willReturn($this->_getSimpleXMLElementMock());
-
-        return $xmlParser;
-    }
-
-    private function _getSimpleXMLElementMock()
-    {
-        $simpleXMLElementMock = $this->getMock('Object', ['xpath']);
-        $simpleXMLElementMock
-            ->method('xpath')
-            ->willReturn([
-                (object)[
-                    'Vcurs' => 'USD',
-                    'Vnom' => '0.47'
-                ]
-            ]);
-        return $simpleXMLElementMock;
     }
 }
